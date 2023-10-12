@@ -1,0 +1,9 @@
+
+# Yes, we want to ignore the notebooks, mainly to prevent patient data from being leaked
+*.ipynb
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
