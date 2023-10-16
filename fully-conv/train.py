@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[1]:
 
 
 import pandas as pd
@@ -9,6 +9,7 @@ import os
 import torch
 from torchvision import transforms
 from torch.utils.data import DataLoader
+from torchsummary import summary
 from qumia_dataset import QUMIA_Dataset
 from FullyConvolutionalResnet18 import FullyConvolutionalResnet18
 
@@ -16,7 +17,7 @@ data_dir = '/projects/0/einf6214/data'
 data_dir_images = os.path.join(data_dir, 'merged')
 
 
-# In[3]:
+# In[2]:
 
 
 # auto reload modules
@@ -24,7 +25,7 @@ get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
 
 
-# In[4]:
+# In[3]:
 
 
 # Read data
@@ -33,34 +34,35 @@ df_val = pd.read_csv(os.path.join(data_dir, 'split_val.csv'))
 print(df_train.shape, df_val.shape)
 
 
-# In[5]:
+# In[4]:
 
 
 data_transform = transforms.Compose([
-    transforms.Grayscale(num_output_channels=3),  # Convert to RGB
-    transforms.Resize((400, 400)),
+    #transforms.Grayscale(num_output_channels=3),  # Convert to RGB
+    #transforms.Resize((400, 400)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    transforms.Normalize(mean=[0.5], std=[0.225]),
 ])
+
+
+# In[5]:
+
+
+train_dataset = QUMIA_Dataset(df_train, transform=data_transform, data_dir=data_dir_images)
+train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=1)
+
+validation_dataset = QUMIA_Dataset(df_val, transform=data_transform, data_dir=data_dir_images)
+validation_loader = DataLoader(validation_dataset, batch_size=1, shuffle=False, num_workers=1)
 
 
 # In[6]:
 
 
-train_dataset = QUMIA_Dataset(df_train, transform=data_transform, data_dir=data_dir_images)
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4)
-
-validation_dataset = QUMIA_Dataset(df_val, transform=data_transform, data_dir=data_dir_images)
-validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False, num_workers=4)
-
-
-# In[7]:
-
-
 model = FullyConvolutionalResnet18(pretrained=False).eval()
+summary(model, (1, 400, 400))
 
 
-# In[8]:
+# In[ ]:
 
 
 import torch.optim as optim
@@ -69,7 +71,7 @@ criterion = torch.nn.BCELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 
-# In[9]:
+# In[ ]:
 
 
 num_epochs = 10  # Number of training epochs

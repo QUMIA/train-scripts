@@ -20,6 +20,8 @@ class FullyConvolutionalResnet18(models.ResNet):
         # Start with standard resnet18 defined here 
         # https://github.com/pytorch/vision/blob/b2e95657cd5f389e3973212ba7ddbdcc751a7878/torchvision/models/resnet.py
         super().__init__(block=models.resnet.BasicBlock, layers=[2, 2, 2, 2], num_classes=num_classes, **kwargs)
+        # super().__init__(block=models.resnet.BasicBlock, layers=[2, 2, 2, 2],
+        #     num_classes=num_classes, norm_layer=nn.InstanceNorm2d, **kwargs)
         if pretrained:
             state_dict = load_state_dict_from_url(models.resnet.model_urls["resnet18"], progress=True)
             self.load_state_dict(state_dict)
@@ -32,6 +34,9 @@ class FullyConvolutionalResnet18(models.ResNet):
         self.last_conv = torch.nn.Conv2d(in_channels=self.fc.in_features, out_channels=num_classes, kernel_size=1)
         self.last_conv.weight.data.copy_(self.fc.weight.data.view(*self.fc.weight.data.shape, 1, 1))
         self.last_conv.bias.data.copy_(self.fc.bias.data)
+
+        # We have only one channel in the input image.
+        self.conv1 = nn.Conv2d(1, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
 
         self.sigmoid = nn.Sigmoid()
 
