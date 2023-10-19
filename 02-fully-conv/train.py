@@ -5,7 +5,7 @@
 
 
 import sys
-print("Python version:\n" + sys.version)
+print("Python version: " + sys.version)
 
 
 # In[15]:
@@ -22,10 +22,6 @@ from qumia_model import QUMIA_Model
 
 data_dir = '/projects/0/einf6214/data'
 data_dir_images = os.path.join(data_dir, 'merged')
-
-
-# In[16]:
-
 
 
 # In[36]:
@@ -90,12 +86,13 @@ criterion = torch.nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 
-# In[27]:
+# In[40]:
 
 
-num_epochs = 1  # Number of training epochs
+num_epochs = 20  # Number of training epochs
 
 for epoch in range(num_epochs):
+    model.train()
     running_loss = 0.0
 
     for i, data in enumerate(train_loader, 0):
@@ -127,6 +124,31 @@ for epoch in range(num_epochs):
         if (i + 1) % 100 == 0:  # Print every 100 mini-batches
             print(f"Epoch [{epoch + 1}/{num_epochs}], Batch [{i + 1}/{len(train_loader)}], Loss: {running_loss / 100:.3f}")
             running_loss = 0.0
+
+    # Save model checkpoint
+    torch.save(model.state_dict(), os.path.join(data_dir, f'model_epoch_{epoch}.pth'))
+
+    # Evaluate on validation set
+    model.eval()
+    with torch.no_grad():
+        running_loss = 0.0
+        for i, data in enumerate(validation_loader, 0):
+            inputs, labels = data
+            
+            # Reshape labels to match output of model
+            labels = labels.view(-1, 1).float()
+
+            # Move input and label tensors to the default device
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+
+            running_loss += loss.item()
+
+        print(f"Validation loss: {running_loss / len(validation_loader):.3f}")
+
 
 
 # In[28]:
