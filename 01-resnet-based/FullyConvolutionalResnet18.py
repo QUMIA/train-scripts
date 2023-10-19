@@ -19,7 +19,9 @@ class FullyConvolutionalResnet18(models.ResNet):
 
         # Start with standard resnet18 defined here 
         # https://github.com/pytorch/vision/blob/b2e95657cd5f389e3973212ba7ddbdcc751a7878/torchvision/models/resnet.py
-        super().__init__(block=models.resnet.BasicBlock, layers=[2, 2, 2, 2], num_classes=num_classes, **kwargs)
+        #super().__init__(block=models.resnet.BasicBlock, layers=[2, 2, 2, 2], num_classes=num_classes, **kwargs)
+        super().__init__(block=models.resnet.BasicBlock, layers=[2, 2, 2, 2],
+            num_classes=num_classes, norm_layer=nn.Identity, **kwargs)
         if pretrained:
             state_dict = load_state_dict_from_url(models.resnet.model_urls["resnet18"], progress=True)
             self.load_state_dict(state_dict)
@@ -29,9 +31,12 @@ class FullyConvolutionalResnet18(models.ResNet):
         self.avgpool = nn.AvgPool2d((7, 7))
 
         # Add final Convolution Layer. 
-        self.last_conv = torch.nn.Conv2d(in_channels=self.fc.in_features, out_channels=num_classes, kernel_size=1)
-        self.last_conv.weight.data.copy_(self.fc.weight.data.view(*self.fc.weight.data.shape, 1, 1))
-        self.last_conv.bias.data.copy_(self.fc.bias.data)
+        # self.last_conv = torch.nn.Conv2d(in_channels=self.fc.in_features, out_channels=num_classes, kernel_size=1)
+        # self.last_conv.weight.data.copy_(self.fc.weight.data.view(*self.fc.weight.data.shape, 1, 1))
+        # self.last_conv.bias.data.copy_(self.fc.bias.data)
+
+        # We have only one channel in the input image.
+        self.conv1 = nn.Conv2d(1, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
 
         self.sigmoid = nn.Sigmoid()
 
@@ -40,11 +45,16 @@ class FullyConvolutionalResnet18(models.ResNet):
     # https://github.com/pytorch/vision/blob/b2e95657cd5f389e3973212ba7ddbdcc751a7878/torchvision/models/resnet.py#L197-L213
     def _forward_impl(self, x):
         # Standard forward for resnet18
+
+        # print the shape
+        print(x.shape)
         x = self.conv1(x)
+        print(x.shape)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
 
+        print(x.shape)
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
@@ -54,7 +64,7 @@ class FullyConvolutionalResnet18(models.ResNet):
         # Notice, there is no forward pass 
         # through the original fully connected layer. 
         # Instead, we forward pass through the last conv layer
-        x = self.last_conv(x)
+        # x = self.last_conv(x)
         x = self.sigmoid(x)
         x = torch.squeeze(x)
         return x
