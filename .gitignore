@@ -2,6 +2,12 @@
 # Yes, we want to ignore the notebooks, mainly to prevent patient data from being leaked
 *.ipynb
 
+# Ignore pytorch models
+*.pth
+
+# SLURM output
+*.out
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
