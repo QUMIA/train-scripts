@@ -38,6 +38,9 @@ class FullyConvolutionalResnet18(models.ResNet):
         # We have only one channel in the input image.
         self.conv1 = nn.Conv2d(1, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
 
+        # We have only one channel in the input image.
+        self.conv1 = nn.Conv2d(1, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
+
         self.sigmoid = nn.Sigmoid()
 
     # Reimplementing forward pass. 
