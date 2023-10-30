@@ -1,14 +1,12 @@
 
-# Yes, we want to ignore the notebooks, mainly to prevent patient data from being leaked
+# The entries below (or any output) should always be ignored
+# to prevent patient properties (even if anonymous) from being leaked
+# into the repository
 *.ipynb
-
-# Ignore pytorch models
+*.csv
+*.out
 *.pth
 
-# SLURM output
-*.out
-
-*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
