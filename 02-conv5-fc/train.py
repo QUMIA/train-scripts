@@ -1,40 +1,53 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[15]:
 
 
 import sys
 print("Python version: " + sys.version)
 
 
-# In[4]:
+# In[39]:
 
 
 import os
 import numpy as np
 import pandas as pd
 import torch
-from torchvision import transforms
+import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.data import RandomSampler
 from torchsummary import summary
+from torchvision import transforms
 from qumia_dataset import QUMIA_Dataset
 from qumia_model import QUMIA_Model
 from tqdm import tqdm
+from datetime import datetime
 
+
+# In[17]:
+
+
+# Data directories
 data_dir = '/projects/0/einf6214/data'
 data_dir_images = os.path.join(data_dir, 'merged')
 
+# Ouput directory
+output_dir = '/projects/0/einf6214/output'
+if not 'run_dir' in locals():
+    run_dir = os.path.join(output_dir, datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    os.mkdir(run_dir)
 
-# In[6]:
+
+# In[19]:
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device: " + str(device))
 
 
-# In[7]:
+# In[20]:
 
 
 # Read data
@@ -43,7 +56,7 @@ df_val = pd.read_csv(os.path.join(data_dir, 'split_val.csv'))
 print(df_train.shape, df_val.shape)
 
 
-# In[8]:
+# In[21]:
 
 
 # Transform applied to each image
@@ -55,7 +68,7 @@ data_transform = transforms.Compose([
 ])
 
 
-# In[9]:
+# In[22]:
 
 
 # Create dataset and dataloader for the train data
@@ -67,32 +80,22 @@ validation_dataset = QUMIA_Dataset(df_val, transform=data_transform, data_dir=da
 validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False, num_workers=1)
 
 
-# In[10]:
+# In[42]:
 
 
-# Instantiate model
+# Instantiate and prepare model
 model = QUMIA_Model()
-
-# Set mode to train (vs. eval for inference)
-model.train()
-
-# Move model to device (GPU or CPU)
 model.to(device)
 
 # Print a summary of the model
 summary(model, (1, 224, 224))
 
-
-# In[11]:
-
-
-import torch.optim as optim
-
+# Loss function and optimizer
 criterion = torch.nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 
-# In[12]:
+# In[40]:
 
 
 def train():
@@ -133,15 +136,15 @@ def train():
                 running_loss = 0.0
 
         # Save model checkpoint
-        torch.save(model.state_dict(), os.path.join('tmp', f'model_epoch_{epoch}.pth'))
+        torch.save(model.state_dict(), os.path.join(run_dir, f'model_epoch_{epoch}.pth'))
 
         make_predictions(model, validation_loader)
 
     # Save the model and weights
-    torch.save(model.state_dict(), 'final_model.pth')
+    torch.save(model.state_dict(), os.path.join(run_dir, 'final_model.pth'))
 
 
-# In[15]:
+# In[34]:
 
 
 def make_predictions(model, dataloader, n_batches=None):
@@ -180,13 +183,51 @@ def make_predictions(model, dataloader, n_batches=None):
     return torch.cat(predictions), torch.cat(labels)
 
 
-# In[58]:
+# In[35]:
+
+
+def validate(n_batches=None):
+    # Load the model and weights
+    model = QUMIA_Model()
+    model.load_state_dict(torch.load('model_3rd_try_20_epochs_4216489.pth', map_location=device))
+
+    # Make predictions on the validation set
+    predictions, labels = make_predictions(model, validation_loader, n_batches)
+
+    # Convert predictions and labels to numpy arrays
+    predictions = predictions.numpy().flatten()
+    rounded_predictions = np.round(predictions)
+    labels = labels.numpy().flatten()
+    print(predictions.shape, labels.shape)
+
+    # We might only have predictions for a number of batches, so we need to trim the dataframe
+    df_val_combined = df_val.iloc[:predictions.shape[0]].copy()
+
+    # Combine the original dataframe with the predictions
+    df_val_combined['prediction'] = predictions
+    df_val_combined['rounded_prediction'] = rounded_predictions
+    df_val_combined['label'] = labels # redundant, but we could detect a mismatch with the inputs maybe
+
+    # As a sanity check, see if the labels match the original input rows
+    match = df_val_combined['label'].equals(df_val_combined['h_score'].astype('float32'))
+    print(f"Labels match: {match}")
+    if not match:
+        print("Possible mismatch between labels and inputs!")
+        #raise Exception("Mismatch between labels and inputs")
+
+    # Save the dataframe to a csv file
+    df_val_combined.to_csv(os.path.join(run_dir, 'df_val_predictions.csv'), index=False)
+
+    return df_val_combined
+
+
+# In[36]:
 
 
 #df_val_combined['label'].equals(df_val_combined['h_score'].astype('float32'))
 
 
-# In[ ]:
+# In[38]:
 
 
 # Main function that checks the argument passed to the script and calls the appropriate function
