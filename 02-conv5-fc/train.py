@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[15]:
+# In[1]:
 
 
 import sys
 print("Python version: " + sys.version)
 
 
-# In[39]:
+# In[2]:
 
 
 import os
@@ -26,7 +26,7 @@ from tqdm import tqdm
 from datetime import datetime
 
 
-# In[17]:
+# In[3]:
 
 
 # Data directories
@@ -40,14 +40,14 @@ if not 'run_dir' in locals():
     os.mkdir(run_dir)
 
 
-# In[19]:
+# In[5]:
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device: " + str(device))
 
 
-# In[20]:
+# In[6]:
 
 
 # Read data
@@ -56,7 +56,7 @@ df_val = pd.read_csv(os.path.join(data_dir, 'split_val.csv'))
 print(df_train.shape, df_val.shape)
 
 
-# In[21]:
+# In[7]:
 
 
 # Transform applied to each image
@@ -68,7 +68,7 @@ data_transform = transforms.Compose([
 ])
 
 
-# In[22]:
+# In[8]:
 
 
 # Create dataset and dataloader for the train data
@@ -80,7 +80,7 @@ validation_dataset = QUMIA_Dataset(df_val, transform=data_transform, data_dir=da
 validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False, num_workers=1)
 
 
-# In[42]:
+# In[13]:
 
 
 # Instantiate and prepare model
@@ -88,7 +88,7 @@ model = QUMIA_Model()
 model.to(device)
 
 # Print a summary of the model
-summary(model, (1, 224, 224))
+summary(model, (1, 224, 224), device=device.type)
 
 # Loss function and optimizer
 criterion = torch.nn.MSELoss()
@@ -189,7 +189,8 @@ def make_predictions(model, dataloader, n_batches=None):
 def validate(n_batches=None):
     # Load the model and weights
     model = QUMIA_Model()
-    model.load_state_dict(torch.load('model_3rd_try_20_epochs_4216489.pth', map_location=device))
+    model.to(device)
+    model.load_state_dict(torch.load('final_model_fixed_split.pth', map_location=device))
 
     # Make predictions on the validation set
     predictions, labels = make_predictions(model, validation_loader, n_batches)
