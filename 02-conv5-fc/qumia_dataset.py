@@ -4,6 +4,7 @@ from PIL import Image
 from torchvision import transforms
 from torch.utils.data import Dataset
 import torch
+import numpy as np
 
 class QUMIA_Dataset(Dataset):
     def __init__(self, dataframe, transform=None, data_dir=None, num_classes=4):
@@ -23,7 +24,8 @@ class QUMIA_Dataset(Dataset):
         # one_hot_label = torch.nn.functional.one_hot(torch.tensor(label), num_classes=self.num_classes) \
         #     .to(torch.float32)
 
+        image = np.array(image) 
         if self.transform:
-            image = self.transform(image)
+            image = self.transform(image=image)["image"]
 
         return image, label

@@ -9,8 +9,8 @@ class QUMIA_Model(nn.Module):
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
         self.conv4 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.fc1 = nn.Linear(128 * 14 * 14, 256)
-        self.fc2 = nn.Linear(256, 1)
+        self.fc1 = nn.Linear(128 * 14 * 14, 128)
+        self.fc2 = nn.Linear(128, 1)
 
     def forward(self, x):
         x = self.pool(nn.functional.relu(self.conv1(x)))
