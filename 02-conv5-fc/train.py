@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[22]:
 
 
 import sys
 print("Python version: " + sys.version)
 
 
-# In[2]:
+# In[23]:
 
 
 import os
@@ -30,7 +30,7 @@ import copy
 import matplotlib.pyplot as plt
 
 
-# In[3]:
+# In[24]:
 
 
 # Data directories
@@ -44,14 +44,14 @@ if not 'run_dir' in locals():
     os.mkdir(run_dir)
 
 
-# In[5]:
+# In[26]:
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device: " + str(device))
 
 
-# In[6]:
+# In[27]:
 
 
 # Read data
@@ -60,7 +60,7 @@ df_val = pd.read_csv(os.path.join(data_dir, 'split_val.csv'))
 print(df_train.shape, df_val.shape)
 
 
-# In[7]:
+# In[28]:
 
 
 # Transform applied to each image
@@ -73,9 +73,9 @@ print(df_train.shape, df_val.shape)
 
 train_transform = A.Compose(
     [
-        A.HorizontalFlip(p=0.5),
-        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=10, p=0.7),
-        A.Resize(224, 224),
+        #A.HorizontalFlip(p=0.5),
+        #A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=10, p=0.7),
+        A.Resize(448, 448),
         #A.RandomBrightnessContrast(p=0.5),
         A.Normalize(mean=(0.5,), std=(0.225,)),
         ToTensorV2(),
@@ -84,26 +84,26 @@ train_transform = A.Compose(
 
 validation_transform = A.Compose(
     [
-        A.Resize(224, 224),
+        A.Resize(448, 448),
         A.Normalize(mean=(0.5,), std=(0.225,)),
         ToTensorV2(),
     ]
 )
 
 
-# In[10]:
+# In[29]:
 
 
 # Create dataset and dataloader for the train data
 train_dataset = QUMIA_Dataset(df_train, transform=train_transform, data_dir=data_dir_images)
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=8)
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=8)
 
 # Create dataset and dataloader for the validation data (no shuffle)
 validation_dataset = QUMIA_Dataset(df_val, transform=validation_transform, data_dir=data_dir_images)
-validation_loader = DataLoader(validation_dataset, batch_size=64, shuffle=False, num_workers=8)
+validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False, num_workers=8)
 
 
-# In[11]:
+# In[30]:
 
 
 def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
@@ -121,7 +121,7 @@ def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
 visualize_augmentations(train_dataset)
 
 
-# In[53]:
+# In[36]:
 
 
 # Instantiate and prepare model
@@ -129,14 +129,14 @@ model = QUMIA_Model()
 model.to(device)
 
 # Print a summary of the model
-summary(model, (1, 224, 224), device=device.type)
+summary(model, (1, 448, 448), device=device.type)
 
 # Loss function and optimizer
 criterion = torch.nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 
-# In[43]:
+# In[33]:
 
 
 def train():
@@ -147,7 +147,7 @@ def train():
         running_loss = 0.0
 
         n_seconds = 10  # Print every n seconds
-        for i, data in enumerate(tqdm(train_loader, mininterval=n_seconds), 0):
+        for i, data in enumerate(train_loader, 0):
             inputs, labels = data
             
             # Reshape labels to match output of model
@@ -189,7 +189,7 @@ def train():
     validate(model)
 
 
-# In[34]:
+# In[12]:
 
 
 def make_predictions(model, dataloader, n_batches=None):
@@ -228,7 +228,7 @@ def make_predictions(model, dataloader, n_batches=None):
     return torch.cat(predictions), torch.cat(labels)
 
 
-# In[23]:
+# In[13]:
 
 
 def validate(model, n_batches=None):
@@ -262,16 +262,19 @@ def validate(model, n_batches=None):
     return df_val_combined
 
 
-# In[36]:
+# In[34]:
+
+
+
+# In[14]:
 
 
 #df_val_combined['label'].equals(df_val_combined['h_score'].astype('float32'))
 
 
-# In[38]:
+# In[ ]:
 
 
-# Main function that checks the argument passed to the script and calls the appropriate function
 def main():
     if len(sys.argv) != 2:
         print("Usage: python train.py {train|validate}")
@@ -283,6 +286,7 @@ def main():
     elif (command == "validate"):
         validate() #TODO: pass model as argument
 
+# Check if we are running as a script and not in a notebook
 if __name__ == '__main__' and '__file__' in globals():
     main()
 
