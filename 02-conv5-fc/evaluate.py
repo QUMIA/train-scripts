@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[1]:
 
 
 import matplotlib.pyplot as plt
@@ -9,16 +9,20 @@ import pandas as pd
 import numpy as np
 
 
-# In[4]:
+# In[3]:
 
 
 # Load the dataframe with the predictions
-df_val_combined = pd.read_csv('df_val_predictions.csv')
-predicted_values = df_val_combined['rounded_prediction'].tolist()
+df_val_combined = pd.read_csv('/projects/0/einf6214/output/2023-11-06_11-35-32_exponential_h-score/df_val_predictions.csv')
+
+predicted_values = df_val_combined['prediction'].tolist()
+predicted_values = [float(round(np.log2(x))) for x in predicted_values]
+
 true_labels = df_val_combined['label'].tolist()
+true_labels = [float(round(np.log2(x))) for x in true_labels]
 
 # Define the class labels and the number of classes
-class_labels = [1.0, 2.0, 3.0, 4.0, 5.0]
+class_labels = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
 num_classes = len(class_labels)
 
 # Create a confusion matrix to count occurrences of predicted vs. true labels
