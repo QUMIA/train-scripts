@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[22]:
+# In[1]:
 
 
 import sys
 print("Python version: " + sys.version)
 
 
-# In[23]:
+# In[2]:
 
 
 import os
@@ -30,7 +30,7 @@ import copy
 import matplotlib.pyplot as plt
 
 
-# In[24]:
+# In[3]:
 
 
 # Data directories
@@ -44,14 +44,14 @@ if not 'run_dir' in locals():
     os.mkdir(run_dir)
 
 
-# In[26]:
+# In[5]:
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device: " + str(device))
 
 
-# In[27]:
+# In[6]:
 
 
 # Read data
@@ -60,7 +60,7 @@ df_val = pd.read_csv(os.path.join(data_dir, 'split_val.csv'))
 print(df_train.shape, df_val.shape)
 
 
-# In[28]:
+# In[7]:
 
 
 # Transform applied to each image
@@ -91,7 +91,7 @@ validation_transform = A.Compose(
 )
 
 
-# In[29]:
+# In[8]:
 
 
 # Create dataset and dataloader for the train data
@@ -103,7 +103,7 @@ validation_dataset = QUMIA_Dataset(df_val, transform=validation_transform, data_
 validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False, num_workers=8)
 
 
-# In[30]:
+# In[9]:
 
 
 def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
@@ -121,7 +121,7 @@ def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
 visualize_augmentations(train_dataset)
 
 
-# In[36]:
+# In[10]:
 
 
 # Instantiate and prepare model
@@ -136,7 +136,7 @@ criterion = torch.nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 
-# In[33]:
+# In[11]:
 
 
 def train():
@@ -228,7 +228,7 @@ def make_predictions(model, dataloader, n_batches=None):
     return torch.cat(predictions), torch.cat(labels)
 
 
-# In[13]:
+# In[14]:
 
 
 def validate(model, n_batches=None):
@@ -260,10 +260,6 @@ def validate(model, n_batches=None):
     df_val_combined.to_csv(os.path.join(run_dir, 'df_val_predictions.csv'), index=False)
 
     return df_val_combined
-
-
-# In[34]:
-
 
 
 # In[14]:
