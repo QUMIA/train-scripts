@@ -20,7 +20,7 @@ class QUMIA_Dataset(Dataset):
         row = self.data.iloc[idx]
         img_path = os.path.join(self.data_dir, row["exam_id"], row["image_file"])
         image = Image.open(img_path)
-        label = 2 ** row["h_score"]  # h-score starts at 1, index at 0
+        label = 4 ** row["h_score"]  # h-score starts at 1, index at 0
         # one_hot_label = torch.nn.functional.one_hot(torch.tensor(label), num_classes=self.num_classes) \
         #     .to(torch.float32)
 
