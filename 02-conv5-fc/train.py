@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[14]:
 
 
 import sys
 print("Python version: " + sys.version)
 
 
-# In[2]:
+# In[15]:
 
 
 import os
@@ -28,9 +28,10 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import copy
 import matplotlib.pyplot as plt
+import wandb
 
 
-# In[3]:
+# In[16]:
 
 
 # Data directories
@@ -44,14 +45,31 @@ if not 'run_dir' in locals():
     os.mkdir(run_dir)
 
 
-# In[5]:
+# In[18]:
+
+
+# start a new wandb run to track this script
+wandb.init(
+    # set the wandb project where this run will be logged
+    project="qumia",
+    
+    # track hyperparameters and run metadata
+    config={
+        "learning_rate": 0.001,
+        "architecture": "CNN",
+        "epochs": 20,
+    }
+)
+
+
+# In[19]:
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device: " + str(device))
 
 
-# In[6]:
+# In[20]:
 
 
 # Read data
@@ -60,7 +78,7 @@ df_val = pd.read_csv(os.path.join(data_dir, 'split_val.csv'))
 print(df_train.shape, df_val.shape)
 
 
-# In[7]:
+# In[21]:
 
 
 # Transform applied to each image
@@ -91,7 +109,7 @@ validation_transform = A.Compose(
 )
 
 
-# In[8]:
+# In[22]:
 
 
 # Create dataset and dataloader for the train data
@@ -103,7 +121,7 @@ validation_dataset = QUMIA_Dataset(df_val, transform=validation_transform, data_
 validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False, num_workers=8)
 
 
-# In[9]:
+# In[23]:
 
 
 def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
@@ -121,7 +139,7 @@ def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
 visualize_augmentations(train_dataset)
 
 
-# In[10]:
+# In[24]:
 
 
 # Instantiate and prepare model
@@ -136,7 +154,7 @@ criterion = torch.nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 
-# In[11]:
+# In[25]:
 
 
 def train():
@@ -180,7 +198,12 @@ def train():
         # Save model checkpoint
         torch.save(model.state_dict(), os.path.join(run_dir, f'model_epoch_{epoch}.pth'))
 
-        make_predictions(model, validation_loader)
+        _, _, train_loss = make_predictions(model, train_loader)
+        print(f"Train loss: {train_loss:.4f}")
+        _, _, validation_loss = make_predictions(model, validation_loader)
+        print(f"Validation loss: {validation_loss:.4f}")
+
+        wandb.log({"train-loss": loss, "validation-loss": validation_loss, "epoch": epoch})
 
     # Save the model and weights
     torch.save(model.state_dict(), os.path.join(run_dir, 'final_model.pth'))
@@ -188,8 +211,10 @@ def train():
     # Do the final validation run (saving the predictions)
     validate(model)
 
+    wandb.finish()
 
-# In[12]:
+
+# In[26]:
 
 
 def make_predictions(model, dataloader, n_batches=None):
@@ -197,7 +222,8 @@ def make_predictions(model, dataloader, n_batches=None):
 
     predictions = []
     labels = []
-    
+    loss = None
+
     with torch.no_grad():
         running_loss = 0.0
         for index, batch in enumerate(dataloader, 0): # tqdm(dataloader, total=len(dataloader), desc="Performing predictions on validation data"):
@@ -223,18 +249,19 @@ def make_predictions(model, dataloader, n_batches=None):
             if n_batches is not None and index > n_batches:
                 break
 
-        print(f"Validation loss: {running_loss / len(validation_loader):.4f}")
-    
-    return torch.cat(predictions), torch.cat(labels)
+        loss = running_loss / len(dataloader)
+
+    return torch.cat(predictions), torch.cat(labels), loss
 
 
-# In[14]:
+# In[27]:
 
 
 def validate(model, n_batches=None):
     # Make predictions on the validation set
-    predictions, labels = make_predictions(model, validation_loader, n_batches)
-
+    predictions, labels, validation_loss = make_predictions(model, validation_loader, n_batches)
+    print(f"Validation loss: {validation_loss:.4f}")
+    
     # Convert predictions and labels to numpy arrays
     predictions = predictions.cpu().numpy().flatten()
     rounded_predictions = np.round(predictions)
@@ -262,7 +289,7 @@ def validate(model, n_batches=None):
     return df_val_combined
 
 
-# In[14]:
+# In[ ]:
 
 
 #df_val_combined['label'].equals(df_val_combined['h_score'].astype('float32'))
