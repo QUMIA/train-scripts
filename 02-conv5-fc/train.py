@@ -1,14 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[14]:
-
-
 import sys
 print("Python version: " + sys.version)
-
-
-# In[15]:
 
 
 import os
@@ -31,9 +25,6 @@ import matplotlib.pyplot as plt
 import wandb
 
 
-# In[16]:
-
-
 # Data directories
 data_dir = '/projects/0/einf6214/data'
 data_dir_images = os.path.join(data_dir, 'merged')
@@ -43,9 +34,6 @@ output_dir = '/projects/0/einf6214/output'
 if not 'run_dir' in locals():
     run_dir = os.path.join(output_dir, datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     os.mkdir(run_dir)
-
-
-# In[18]:
 
 
 # start a new wandb run to track this script
@@ -62,23 +50,14 @@ wandb.init(
 )
 
 
-# In[19]:
-
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device: " + str(device))
-
-
-# In[20]:
 
 
 # Read data
 df_train = pd.read_csv(os.path.join(data_dir, 'split_train.csv'))
 df_val = pd.read_csv(os.path.join(data_dir, 'split_val.csv'))
 print(df_train.shape, df_val.shape)
-
-
-# In[21]:
 
 
 # Transform applied to each image
@@ -89,11 +68,14 @@ print(df_train.shape, df_val.shape)
 #     transforms.Normalize(mean=[0.5], std=[0.225]),
 # ])
 
+elastic_alpha = 480.0
+
 train_transform = A.Compose(
     [
         #A.HorizontalFlip(p=0.5),
         #A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=10, p=0.7),
         A.Resize(448, 448),
+        A.ElasticTransform(p=1, alpha=elastic_alpha, sigma=elastic_alpha * 0.07, alpha_affine=elastic_alpha * 0.05),
         #A.RandomBrightnessContrast(p=0.5),
         A.Normalize(mean=(0.5,), std=(0.225,)),
         ToTensorV2(),
@@ -109,9 +91,6 @@ validation_transform = A.Compose(
 )
 
 
-# In[22]:
-
-
 # Create dataset and dataloader for the train data
 train_dataset = QUMIA_Dataset(df_train, transform=train_transform, data_dir=data_dir_images)
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=8)
@@ -119,9 +98,6 @@ train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_worker
 # Create dataset and dataloader for the validation data (no shuffle)
 validation_dataset = QUMIA_Dataset(df_val, transform=validation_transform, data_dir=data_dir_images)
 validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False, num_workers=8)
-
-
-# In[23]:
 
 
 def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
@@ -139,9 +115,6 @@ def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
 visualize_augmentations(train_dataset)
 
 
-# In[24]:
-
-
 # Instantiate and prepare model
 model = QUMIA_Model()
 model.to(device)
@@ -154,13 +127,10 @@ criterion = torch.nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 
-# In[25]:
-
-
 def train():
     num_epochs = 20  # Number of training epochs
 
-    for epoch in range(num_epochs):
+    for epoch in range(1, num_epochs+1):
         model.train()
         running_loss = 0.0
 
@@ -192,7 +162,7 @@ def train():
             running_loss += loss.item()
 
             if (i + 1) % 100 == 0:  # Print every 100 mini-batches
-                print(f"Epoch [{epoch + 1}/{num_epochs}], Batch [{i + 1}/{len(train_loader)}], Loss: {running_loss / 100:.3f}")
+                print(f"Epoch [{epoch}/{num_epochs}], Batch [{i + 1}/{len(train_loader)}], Loss: {running_loss / 100:.3f}")
                 running_loss = 0.0
 
         # Save model checkpoint
@@ -203,7 +173,7 @@ def train():
         _, _, validation_loss = make_predictions(model, validation_loader)
         print(f"Validation loss: {validation_loss:.4f}")
 
-        wandb.log({"train-loss": loss, "validation-loss": validation_loss, "epoch": epoch})
+        wandb.log({"train-loss": train_loss, "validation-loss": validation_loss, "epoch": epoch})
 
     # Save the model and weights
     torch.save(model.state_dict(), os.path.join(run_dir, 'final_model.pth'))
@@ -212,9 +182,6 @@ def train():
     validate(model)
 
     wandb.finish()
-
-
-# In[26]:
 
 
 def make_predictions(model, dataloader, n_batches=None):
@@ -254,9 +221,6 @@ def make_predictions(model, dataloader, n_batches=None):
     return torch.cat(predictions), torch.cat(labels), loss
 
 
-# In[27]:
-
-
 def validate(model, n_batches=None):
     # Make predictions on the validation set
     predictions, labels, validation_loss = make_predictions(model, validation_loader, n_batches)
@@ -289,13 +253,7 @@ def validate(model, n_batches=None):
     return df_val_combined
 
 
-# In[ ]:
-
-
 #df_val_combined['label'].equals(df_val_combined['h_score'].astype('float32'))
-
-
-# In[ ]:
 
 
 def main():
