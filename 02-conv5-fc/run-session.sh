@@ -46,7 +46,7 @@ git commit -m "[SESSION] $LABEL" --allow-empty
 ### output directory ###
 
 # Create an output directory with the current date and time
-OUTPUT_DIR="output_$(date +%Y-%m-%d_%H-%M-%S)_${LABEL}"
+OUTPUT_DIR="${OUTPUT_DIR}/$(date +%Y-%m-%d_%H-%M-%S)_${LABEL}"
 mkdir "$OUTPUT_DIR"
 
 # Copy the contents of the current directory to the output directory
