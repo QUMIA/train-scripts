@@ -68,11 +68,7 @@ EOF
 
 ### Queue the job ###
 
-# Assuming the script to call is 'other_script.sh' located in the current directory
-# Change the script name/path as required
-OTHER_COMMAND="./other_script.sh"
-
 # Call the other command with the path to the script inside the output directory
-# $OTHER_COMMAND "$OUTPUT_DIR/$OTHER_COMMAND"
+sbatch train-job.sh
 
 echo Done

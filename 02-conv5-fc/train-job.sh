@@ -13,4 +13,4 @@ module load PyTorch/1.12.0-foss-2022a-CUDA-11.7.0
 
 # Run the script, passing all command line arguments
 pip install -r requirements.txt
-python -u train.py train "$@"
+python -u train.py train

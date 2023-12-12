@@ -23,23 +23,28 @@ from albumentations.pytorch import ToTensorV2
 import copy
 import matplotlib.pyplot as plt
 import wandb
+from dotenv import load_dotenv
+
+
+# Load environment variables from .env file
+if load_dotenv():
+    sessionLabel = os.getenv('SESSION_LABEL')
+else:
+    sessionLabel = None
+print(sessionLabel)
 
 
 # Data directories
 data_dir = '/projects/0/einf6214/data'
 data_dir_images = os.path.join(data_dir, 'merged')
 
-# Ouput directory
-output_dir = '/projects/0/einf6214/output'
-if not 'run_dir' in locals():
-    run_dir = os.path.join(output_dir, datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-    os.mkdir(run_dir)
-
 
 # start a new wandb run to track this script
 wandb.init(
     # set the wandb project where this run will be logged
     project="qumia",
+
+    name=sessionLabel,
     
     # track hyperparameters and run metadata
     config={
@@ -60,14 +65,6 @@ df_val = pd.read_csv(os.path.join(data_dir, 'split_val.csv'))
 print(df_train.shape, df_val.shape)
 
 
-# Transform applied to each image
-# data_transform = transforms.Compose([
-#     #transforms.Grayscale(num_output_channels=3),  # Convert to RGB
-#     transforms.Resize((224, 224)),
-#     transforms.ToTensor(),
-#     transforms.Normalize(mean=[0.5], std=[0.225]),
-# ])
-
 elastic_alpha = 480.0
 
 train_transform = A.Compose(
@@ -75,7 +72,7 @@ train_transform = A.Compose(
         #A.HorizontalFlip(p=0.5),
         #A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=10, p=0.7),
         A.Resize(448, 448),
-        A.ElasticTransform(p=1, alpha=elastic_alpha, sigma=elastic_alpha * 0.07, alpha_affine=elastic_alpha * 0.05),
+        #A.ElasticTransform(p=1, alpha=elastic_alpha, sigma=elastic_alpha * 0.07, alpha_affine=elastic_alpha * 0.05),
         #A.RandomBrightnessContrast(p=0.5),
         A.Normalize(mean=(0.5,), std=(0.225,)),
         ToTensorV2(),
