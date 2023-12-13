@@ -23,13 +23,13 @@ if echo "$LABEL" | grep -q "[/:*?\"<>|\]"; then
     exit 1
 fi
 
-# Check for untracked files
-# untracked_files=$(git ls-files --others --exclude-standard)
-# if [ -n "$untracked_files" ]; then
-#     echo "There are untracked files:"
-#     echo "$untracked_files"
-#     exit 1
-# fi
+# Check for untracked files (we don't want to automatically add these, but they may be required)
+untracked_files=$(git ls-files --others --exclude-standard)
+if [ -n "$untracked_files" ]; then
+    echo "There are untracked files:"
+    echo "$untracked_files"
+    exit 1
+fi
 
 
 
