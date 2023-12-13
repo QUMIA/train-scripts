@@ -15,4 +15,5 @@ __pycache__/
 
 wandb/
 old_stuff/
+output/
 .env

@@ -68,7 +68,8 @@ EOF
 
 ### Queue the job ###
 
-# Call the other command with the path to the script inside the output directory
-sbatch "$OUTPUT_DIR/train-job.sh"
+# Queue the train job inside the output directory (we want to have the log there also)
+cd $OUTPUT_DIR
+sbatch train-job.sh
 
 echo Done

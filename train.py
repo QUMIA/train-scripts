@@ -38,6 +38,11 @@ print(sessionLabel)
 data_dir = '/projects/0/einf6214/data'
 data_dir_images = os.path.join(data_dir, 'merged')
 
+# Output dir
+output_dir = 'output'
+if not os.path.exists(output_dir):
+    os.mkdir(output_dir)
+
 
 # start a new wandb run to track this script
 wandb.init(
@@ -163,7 +168,7 @@ def train():
                 running_loss = 0.0
 
         # Save model checkpoint
-        torch.save(model.state_dict(), f'model_epoch_{epoch}.pth')
+        torch.save(model.state_dict(), os.path.join(output_dir, f'model_epoch_{epoch}.pth'))
 
         _, _, train_loss = make_predictions(model, train_loader)
         print(f"Train loss: {train_loss:.4f}")
@@ -173,7 +178,7 @@ def train():
         wandb.log({"train-loss": train_loss, "validation-loss": validation_loss, "epoch": epoch})
 
     # Save the model and weights
-    torch.save(model.state_dict(), 'final_model.pth')
+    torch.save(model.state_dict(), os.path.join(output_dir, 'final_model.pth'))
 
     # Do the final validation run (saving the predictions)
     validate(model)
@@ -245,7 +250,7 @@ def validate(model, n_batches=None):
         #raise Exception("Mismatch between labels and inputs")
 
     # Save the dataframe to a csv file
-    df_val_combined.to_csv('df_val_predictions.csv', index=False)
+    df_val_combined.to_csv(os.path.join(output_dir, 'df_val_predictions.csv'), index=False)
 
     return df_val_combined
 
