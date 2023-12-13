@@ -20,12 +20,18 @@ class QUMIA_Dataset(Dataset):
         row = self.data.iloc[idx]
         img_path = os.path.join(self.data_dir, row["exam_id"], row["image_file"])
         image = Image.open(img_path)
-        label = 4 ** row["h_score"]  # h-score starts at 1, index at 0
-        # one_hot_label = torch.nn.functional.one_hot(torch.tensor(label), num_classes=self.num_classes) \
-        #     .to(torch.float32)
+        label = QUMIA_Dataset.hscore_to_value(row["h_score"])
 
         image = np.array(image) 
         if self.transform:
             image = self.transform(image=image)["image"]
 
         return image, label
+
+    @staticmethod
+    def value_to_hscore(value):
+        return np.log(max(value, 1)) / np.log(4)
+
+    @staticmethod
+    def hscore_to_value(hscore):
+        return np.power(4, hscore)

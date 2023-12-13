@@ -228,11 +228,14 @@ def validate(model, n_batches=None):
     predictions, labels, validation_loss = make_predictions(model, validation_loader, n_batches)
     print(f"Validation loss: {validation_loss:.4f}")
     
-    # Convert predictions and labels to numpy arrays
+    # Convert predictions and labels to numpy arrays, and map back to original h_score values
     predictions = predictions.cpu().numpy().flatten()
+    predictions = np.array([QUMIA_Dataset.value_to_hscore(value) for value in predictions], dtype=np.float32)
     rounded_predictions = np.round(predictions)
     labels = labels.cpu().numpy().flatten()
+    labels = np.array([QUMIA_Dataset.value_to_hscore(value) for value in labels], dtype=np.float32)
     print(predictions.shape, labels.shape)
+    print(rounded_predictions.dtype)
 
     # We might only have predictions for a number of batches, so we need to trim the dataframe
     df_val_combined = df_val.iloc[:predictions.shape[0]].copy()
@@ -252,10 +255,52 @@ def validate(model, n_batches=None):
     # Save the dataframe to a csv file
     df_val_combined.to_csv(os.path.join(output_dir, 'df_val_predictions.csv'), index=False)
 
+    create_confusion_matrix(rounded_predictions.tolist(), labels.tolist())
+
     return df_val_combined
 
 
-#df_val_combined['label'].equals(df_val_combined['h_score'].astype('float32'))
+def create_confusion_matrix(predicted_values, true_labels):
+    # Define the class labels and the number of classes
+    class_labels = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
+    num_classes = len(class_labels)
+
+    # Create a confusion matrix to count occurrences of predicted vs. true labels
+    confusion_matrix = np.zeros((num_classes, num_classes))
+    for pred, true in zip(predicted_values, true_labels):
+        pred_class = class_labels.index(pred)
+        true_class = class_labels.index(true)
+        confusion_matrix[true_class, pred_class] += 1
+
+    # Create a figure and axis
+    fig, ax = plt.subplots()
+
+    # Create the heatmap on the axis
+    cax = ax.imshow(confusion_matrix, interpolation='nearest', cmap=plt.cm.Greens)
+    ax.set_title("Confusion Matrix Heatmap")
+    fig.colorbar(cax)
+
+    # Set the axis labels
+    ax.set_xlabel("Predicted Labels")
+    ax.set_ylabel("True Labels")
+
+    # Set the axis ticks and labels
+    tick_marks = np.arange(num_classes)
+    ax.set_xticks(tick_marks)
+    ax.set_xticklabels(class_labels)
+    ax.set_yticks(tick_marks)
+    ax.set_yticklabels(class_labels)
+    ax.invert_yaxis()
+
+    # Display the values within the heatmap cells (optional)
+    for i in range(num_classes):
+        for j in range(num_classes):
+            value = int(confusion_matrix[i, j])
+            ax.text(j, i, f"{value}", ha="center", va="center", color="black" if value < confusion_matrix.max() / 2 else "white")
+
+    image_path = os.path.join(output_dir, 'confusion_matrix.png')
+    fig.savefig(image_path)
+    wandb.log({"confusion_matrix": wandb.Image(image_path)})
 
 
 def main():
