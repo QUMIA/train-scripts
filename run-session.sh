@@ -69,6 +69,6 @@ EOF
 ### Queue the job ###
 
 # Call the other command with the path to the script inside the output directory
-sbatch train-job.sh
+sbatch "$OUTPUT_DIR/train-job.sh"
 
 echo Done
