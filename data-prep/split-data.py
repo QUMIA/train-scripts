@@ -1,23 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import os
 import pandas as pd
-
-
-# In[2]:
 
 
 # Read the data
 data_dir = '/projects/0/einf6214/data'
 df = pd.read_csv(os.path.join(data_dir, 'merged.csv'))
 print(df.shape)
-
-
-# In[3]:
 
 
 from sklearn.model_selection import GroupShuffleSplit 
@@ -46,8 +37,7 @@ def split_n_way(df, group_column, sizes, random_state=42):
 df_train, df_val, df_test = split_n_way(df, group_column='anon_id', sizes=[0.6, 0.2, 0.2])
 print(df_train.shape, df_val.shape, df_test.shape)
 
-
-# In[4]:
+# First extraction: (50343, 13) (16341, 13) (15376, 13)
 
 
 # Check if there are any anon_ids that are in more than one dataset
@@ -56,20 +46,17 @@ print (set(df_train['anon_id']).intersection(set(df_test['anon_id'])))
 print (set(df_val['anon_id']).intersection(set(df_test['anon_id'])))
 
 
-# In[5]:
-
-
 # For each set, print the distribution of h_scores
-print(df_train['h_score'].value_counts())
-print(df_val['h_score'].value_counts())
-print(df_test['h_score'].value_counts())
-
-
-# In[6]:
+print(df_train['muscle'].value_counts())
+print(df_val['muscle'].value_counts())
+print(df_test['muscle'].value_counts())
 
 
 # write the train, val, and test datasets to csv files
 df_train.to_csv(os.path.join(data_dir, 'split_train.csv'), index=False)
 df_val.to_csv(os.path.join(data_dir, 'split_val.csv'), index=False)
 df_test.to_csv(os.path.join(data_dir, 'split_test.csv'), index=False)
+
+
+
 
