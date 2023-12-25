@@ -44,20 +44,20 @@ if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 
 
-# start a new wandb run to track this script
-wandb.init(
-    # set the wandb project where this run will be logged
-    project="qumia",
+# # start a new wandb run to track this script
+# wandb.init(
+#     # set the wandb project where this run will be logged
+#     project="qumia",
 
-    name=sessionLabel,
+#     name=sessionLabel,
     
-    # track hyperparameters and run metadata
-    config={
-        "learning_rate": 0.001,
-        "architecture": "CNN",
-        "epochs": 20,
-    }
-)
+#     # track hyperparameters and run metadata
+#     config={
+#         "learning_rate": 0.001,
+#         "architecture": "CNN",
+#         "epochs": 20,
+#     }
+# )
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -114,11 +114,12 @@ def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
     plt.tight_layout()
     plt.show()
 
-visualize_augmentations(train_dataset)
+#visualize_augmentations(train_dataset)
 
 
 # Instantiate and prepare model
-model = QUMIA_Model()
+#model = QUMIA_Model(1, 448, 5, 32, 256)
+model = QUMIA_Model(1, 448, 4, 16, 128)
 model.to(device)
 
 # Print a summary of the model
