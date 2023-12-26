@@ -23,6 +23,16 @@ if echo "$LABEL" | grep -q "[/:*?\"<>|\]"; then
     exit 1
 fi
 
+
+
+### Convert notebook ###
+
+./convert-notebook.sh train.ipynb
+
+
+
+### git commit ###
+
 # Check for untracked files (we don't want to automatically add these, but they may be required)
 untracked_files=$(git ls-files --others --exclude-standard)
 if [ -n "$untracked_files" ]; then
@@ -30,10 +40,6 @@ if [ -n "$untracked_files" ]; then
     echo "$untracked_files"
     exit 1
 fi
-
-
-
-### git commit ###
 
 # Add all changes
 git add .
@@ -64,6 +70,7 @@ SESSION_LABEL=$LABEL
 GIT_SHA=$COMMIT_SHA
 GITHUB_COMMIT_URL=$GITHUB_COMMIT_URL
 EOF
+
 
 
 ### Queue the job ###
