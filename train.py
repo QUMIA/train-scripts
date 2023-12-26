@@ -119,7 +119,7 @@ def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
 
 # Instantiate and prepare model
 #model = QUMIA_Model(1, 448, 5, 32, 256)
-model = QUMIA_Model(1, 448, 5, 16, 256)
+model = QUMIA_Model(1, 448, 4, 32, 128)
 model.to(device)
 
 # Print a summary of the model
