@@ -44,20 +44,8 @@ if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 
 
-# start a new wandb run to track this script
-wandb.init(
-    # set the wandb project where this run will be logged
-    project="qumia",
-
-    name=sessionLabel,
-    
-    # track hyperparameters and run metadata
-    config={
-        "learning_rate": 0.001,
-        "architecture": "CNN",
-        "epochs": 20,
-    }
-)
+# Image size
+image_size = 448
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -76,7 +64,7 @@ train_transform = A.Compose(
     [
         #A.HorizontalFlip(p=0.5),
         #A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=10, p=0.7),
-        A.Resize(448, 448),
+        A.Resize(image_size, image_size),
         #A.ElasticTransform(p=1, alpha=elastic_alpha, sigma=elastic_alpha * 0.07, alpha_affine=elastic_alpha * 0.05),
         #A.RandomBrightnessContrast(p=0.5),
         A.Normalize(mean=(0.5,), std=(0.225,)),
@@ -86,7 +74,7 @@ train_transform = A.Compose(
 
 validation_transform = A.Compose(
     [
-        A.Resize(448, 448),
+        A.Resize(image_size, image_size),
         A.Normalize(mean=(0.5,), std=(0.225,)),
         ToTensorV2(),
     ]
@@ -117,13 +105,17 @@ def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
 #visualize_augmentations(train_dataset)
 
 
+def create_model():
+    model = QUMIA_Model(1, image_size, 4, 32, 128)
+    model.to(device)
+    return model
+
+
 # Instantiate and prepare model
-#model = QUMIA_Model(1, 448, 5, 32, 256)
-model = QUMIA_Model(1, 448, 4, 32, 128)
-model.to(device)
+model = create_model()
 
 # Print a summary of the model
-summary(model, (1, 448, 448), device=device.type)
+summary(model, (1, image_size, image_size), device=device.type)
 
 # Loss function and optimizer
 criterion = torch.nn.MSELoss()
@@ -132,6 +124,21 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 def train():
     num_epochs = 20  # Number of training epochs
+
+    # start a new wandb run to track this script
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project="qumia",
+
+        name=sessionLabel,
+        
+        # track hyperparameters and run metadata
+        config={
+            "learning_rate": 0.001,
+            "architecture": "CNN",
+            "epochs": num_epochs,
+        }
+    )
 
     for epoch in range(1, num_epochs+1):
         model.train()
