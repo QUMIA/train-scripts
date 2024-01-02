@@ -106,7 +106,7 @@ def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
 
 
 def create_model():
-    model = QUMIA_Model(1, image_size, 6, 32, 256)
+    model = QUMIA_Model(1, image_size, 5, 32, 512)
     model.to(device)
     return model
 
