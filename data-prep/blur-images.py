@@ -55,6 +55,11 @@ def process_row(row):
     y = max(row['li_y'], row['re_y'], row['id_y'])
     bbox = (0, y - 5, x + 32, 23) if x > -1 and y > -1 else None
 
+    # Debugging only
+    # cv2.rectangle(image, bbox[:2], (bbox[0]+bbox[2], bbox[1]+bbox[3]), (0, 255, 0), 2)
+    # plt.imshow(image)
+    # plt.show()
+
     # Blur the image
     if bbox is not None:
         blurred_image = blur_area_with_soft_edges(image, bbox, 21, 15)
@@ -70,25 +75,13 @@ def process_row(row):
     return blurred_image
 
 
-# Debugging only
-# cv2.rectangle(image, bbox[:2], (bbox[0]+bbox[2], bbox[1]+bbox[3]), (0, 255, 0), 2)
-# plt.imshow(image)
+# # Debugging
+# blurred_image = process_row(df.iloc[0])
+# plt.imshow(blurred_image, cmap='gray')
 # plt.show()
-
-
-# Debugging
-blurred_image = process_row(df.iloc[0])
-plt.imshow(blurred_image, cmap='gray')
-plt.show()
 
 
 # Iterate through the rows and show progress
 for i in tqdm(range(df.shape[0])):
     process_row(df.iloc[i])
-
-
-
-
-
-
 
