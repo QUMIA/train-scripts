@@ -70,7 +70,7 @@ def process_row(row):
     exam_dir = os.path.join(data_dir, 'blurred', row['exam_id'])
     if not os.path.exists(exam_dir):
         os.makedirs(exam_dir)
-    cv2.imwrite(os.path.join(data_dir, 'blurred', row['exam_id'], row['image_file']), blurred_image)
+    cv2.imwrite(os.path.join(exam_dir, row['image_file']), blurred_image)
 
     return blurred_image
 
@@ -84,6 +84,9 @@ def process_row(row):
 # Iterate through the rows and show progress
 for i in tqdm(range(df.shape[0])):
     process_row(df.iloc[i])
+
+
+
 
 
 
