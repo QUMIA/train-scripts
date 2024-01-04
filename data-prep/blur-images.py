@@ -15,12 +15,6 @@ df = pd.read_csv(os.path.join(data_dir, 'merged.csv'))
 print(df.shape)
 
 
-# Debugging only
-# cv2.rectangle(image, bbox[:2], (bbox[0]+bbox[2], bbox[1]+bbox[3]), (0, 255, 0), 2)
-# plt.imshow(image)
-# plt.show()
-
-
 def blur_area_with_soft_edges(image, bbox, blur_intensity=15, feather_amount=15):
     # Ensure kernel sizes are odd
     blur_intensity = blur_intensity + 1 if blur_intensity % 2 == 0 else blur_intensity
@@ -54,6 +48,7 @@ def process_row(row):
     image = cv2.imread(image_path)
     if image is None:
         raise ValueError("Image not found")
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Get the bounding box
     x = max(row['li_x'], row['re_x'], row['id_x'])
@@ -75,10 +70,16 @@ def process_row(row):
     return blurred_image
 
 
-# Debugging
-# blurred_image = process_row(df.iloc[0])
-# plt.imshow(blurred_image)
+# Debugging only
+# cv2.rectangle(image, bbox[:2], (bbox[0]+bbox[2], bbox[1]+bbox[3]), (0, 255, 0), 2)
+# plt.imshow(image)
 # plt.show()
+
+
+# Debugging
+blurred_image = process_row(df.iloc[0])
+plt.imshow(blurred_image, cmap='gray')
+plt.show()
 
 
 # Iterate through the rows and show progress
