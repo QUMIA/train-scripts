@@ -274,7 +274,7 @@ def validate(model, n_batches=None, set_type='validation'):
     return df_combined
 
 
-def array_to_csv_with_headers(array, file_name, row_headers, col_headers):
+def array_to_csv_with_headers(array, path, row_headers, col_headers):
     """
     Converts a 2D NumPy array to a CSV file with row and column headers.
 
@@ -292,7 +292,7 @@ def array_to_csv_with_headers(array, file_name, row_headers, col_headers):
         raise ValueError("Headers do not match the dimensions of the array")
 
     # Write the array to a CSV file
-    with open(file_name, 'w', newline='') as file:
+    with open(path, 'w', newline='') as file:
         writer = csv.writer(file)
 
         # Write column headers
@@ -309,7 +309,7 @@ def create_confusion_matrix(predicted_values, true_labels, set_type):
     num_classes = len(class_labels)
 
     # Create a confusion matrix to count occurrences of predicted vs. true labels
-    confusion_matrix = np.zeros((num_classes, num_classes))
+    confusion_matrix = np.zeros((num_classes, num_classes), dtype=np.int32)
     for pred, true in zip(predicted_values, true_labels):
         pred_class = class_labels.index(pred)
         true_class = class_labels.index(true)
@@ -349,9 +349,10 @@ def create_confusion_matrix(predicted_values, true_labels, set_type):
     wandb.log({f"confusion_matrix_{set_type}": wandb.Image(image_path)})
 
     # Save the confusion matrix to a csv file
-    row_headers = [f"True {label}" for label in class_labels]
-    col_headers = [f"Pred {label}" for label in class_labels]
-    array_to_csv_with_headers(confusion_matrix, f'confusion_matrix_{set_type}', row_headers, col_headers)
+    row_headers = [f"True_{label}" for label in class_labels]
+    col_headers = [f"Pred_{label}" for label in class_labels]
+    csv_path = os.path.join(output_dir, f'confusion_matrix_{set_type}.csv')
+    array_to_csv_with_headers(confusion_matrix, csv_path, row_headers, col_headers)
 
 
 def main():

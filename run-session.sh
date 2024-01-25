@@ -49,7 +49,7 @@ git commit -m "[SESSION] $LABEL" --allow-empty
 
 
 
-### output directory ###
+### Prepare output directory ###
 
 # Create an output directory with the current date and time
 OUTPUT_DIR="${OUTPUT_DIR}/$(date +%Y-%m-%d_%H-%M-%S)_${LABEL}"
@@ -57,6 +57,10 @@ mkdir "$OUTPUT_DIR"
 
 # Copy the contents of the current directory to the output directory
 cp -r ./* "$OUTPUT_DIR"
+
+# Clean the output's output directory
+if [ -d "$OUTPUT_DIR/output" ]; then
+    rm -rf "$OUTPUT_DIR/output"/*
 
 # Get the SHA of the latest commit
 COMMIT_SHA=$(git rev-parse HEAD)
