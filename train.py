@@ -124,7 +124,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 
 def train():
-    num_epochs = 20  # Number of training epochs
+    num_epochs = 1  # Number of training epochs
 
     # start a new wandb run to track this script
     wandb.init(
