@@ -61,6 +61,7 @@ cp -r ./* "$OUTPUT_DIR"
 # Clean the output's output directory
 if [ -d "$OUTPUT_DIR/output" ]; then
     rm -rf "$OUTPUT_DIR/output"/*
+fi
 
 # Get the SHA of the latest commit
 COMMIT_SHA=$(git rev-parse HEAD)
