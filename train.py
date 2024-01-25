@@ -24,6 +24,7 @@ import copy
 import matplotlib.pyplot as plt
 import wandb
 from dotenv import load_dotenv
+import csv
 
 
 # Load environment variables from .env file
@@ -36,7 +37,7 @@ print(sessionLabel)
 
 # Data directories
 data_dir = '/projects/0/einf6214/data'
-data_dir_images = os.path.join(data_dir, 'blurred')
+data_dir_images = os.path.join(data_dir, 'merged')
 
 # Output dir
 output_dir = 'output'
@@ -189,7 +190,8 @@ def train():
     torch.save(model.state_dict(), os.path.join(output_dir, 'final_model.pth'))
 
     # Do the final validation run (saving the predictions)
-    validate(model)
+    validate(model, set_type='validation')
+    validate(model, set_type='train')
 
     wandb.finish()
 
@@ -231,10 +233,14 @@ def make_predictions(model, dataloader, n_batches=None):
     return torch.cat(predictions), torch.cat(labels), loss
 
 
-def validate(model, n_batches=None):
-    # Make predictions on the validation set
-    predictions, labels, validation_loss = make_predictions(model, validation_loader, n_batches)
-    print(f"Validation loss: {validation_loss:.4f}")
+def validate(model, n_batches=None, set_type='validation'):
+    assert set_type in ['validation', 'train']
+    loader = validation_loader if set_type == 'validation' else train_loader
+    df = df_val if set_type == 'validation' else df_train
+
+    # Make predictions on the specified dataset
+    predictions, labels, loss = make_predictions(model, loader, n_batches)
+    print(f"{set_type} loss: {loss:.4f}")
     
     # Convert predictions and labels to numpy arrays, and map back to original h_score values
     predictions = predictions.cpu().numpy().flatten()
@@ -246,29 +252,58 @@ def validate(model, n_batches=None):
     print(rounded_predictions.dtype)
 
     # We might only have predictions for a number of batches, so we need to trim the dataframe
-    df_val_combined = df_val.iloc[:predictions.shape[0]].copy()
+    df_combined = df.iloc[:predictions.shape[0]].copy()
 
     # Combine the original dataframe with the predictions
-    df_val_combined['prediction'] = predictions
-    df_val_combined['rounded_prediction'] = rounded_predictions
-    df_val_combined['label'] = labels # redundant, but we could detect a mismatch with the inputs maybe
+    df_combined['prediction'] = predictions
+    df_combined['rounded_prediction'] = rounded_predictions
+    df_combined['label'] = labels # redundant, but we could detect a mismatch with the inputs maybe
 
     # As a sanity check, see if the labels match the original input rows
-    match = df_val_combined['label'].equals(df_val_combined['h_score'].astype('float32'))
+    match = df_combined['label'].equals(df_combined['h_score'].astype('float32'))
     print(f"Labels match: {match}")
     if not match:
         print("Possible mismatch between labels and inputs!")
         #raise Exception("Mismatch between labels and inputs")
 
     # Save the dataframe to a csv file
-    df_val_combined.to_csv(os.path.join(output_dir, 'df_val_predictions.csv'), index=False)
+    df_combined.to_csv(os.path.join(output_dir, f'df_{set_type}_predictions.csv'), index=False)
 
-    create_confusion_matrix(rounded_predictions.tolist(), labels.tolist())
+    create_confusion_matrix(rounded_predictions.tolist(), labels.tolist(), set_type)
 
-    return df_val_combined
+    return df_combined
 
 
-def create_confusion_matrix(predicted_values, true_labels):
+def array_to_csv_with_headers(array, file_name, row_headers, col_headers):
+    """
+    Converts a 2D NumPy array to a CSV file with row and column headers.
+
+    :param array: 2D NumPy array to be converted.
+    :param file_name: Name of the CSV file to save the array to.
+    :param row_headers: List of row headers.
+    :param col_headers: List of column headers.
+    """
+    # Ensure the array is 2D
+    if len(array.shape) != 2:
+        raise ValueError("Only 2D arrays are supported")
+
+    # Check if the headers match the array dimensions
+    if len(row_headers) != array.shape[0] or len(col_headers) != array.shape[1]:
+        raise ValueError("Headers do not match the dimensions of the array")
+
+    # Write the array to a CSV file
+    with open(file_name, 'w', newline='') as file:
+        writer = csv.writer(file)
+
+        # Write column headers
+        writer.writerow([''] + col_headers)
+
+        # Write rows with row headers
+        for header, row in zip(row_headers, array):
+            writer.writerow([header] + list(row))
+
+
+def create_confusion_matrix(predicted_values, true_labels, set_type):
     # Define the class labels and the number of classes
     class_labels = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
     num_classes = len(class_labels)
@@ -306,9 +341,17 @@ def create_confusion_matrix(predicted_values, true_labels):
             value = int(confusion_matrix[i, j])
             ax.text(j, i, f"{value}", ha="center", va="center", color="black" if value < confusion_matrix.max() / 2 else "white")
 
-    image_path = os.path.join(output_dir, 'confusion_matrix.png')
+    # Save the figure to a file
+    image_path = os.path.join(output_dir, f'confusion_matrix_{set_type}.png')
     fig.savefig(image_path)
-    wandb.log({"confusion_matrix": wandb.Image(image_path)})
+
+    # Log the confusion matrix as an image artifact to W&B
+    wandb.log({f"confusion_matrix_{set_type}": wandb.Image(image_path)})
+
+    # Save the confusion matrix to a csv file
+    row_headers = [f"True {label}" for label in class_labels]
+    col_headers = [f"Pred {label}" for label in class_labels]
+    array_to_csv_with_headers(confusion_matrix, f'confusion_matrix_{set_type}', row_headers, col_headers)
 
 
 def main():
