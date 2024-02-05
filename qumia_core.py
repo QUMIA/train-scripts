@@ -82,8 +82,8 @@ def train(num_epochs, trainer: QUMIA_Trainer):
     torch.save(model.state_dict(), os.path.join(output_dir, 'final_model.pth'))
 
     # Do the final validation run (saving the predictions)
-    validate(model, set_type='validation')
-    validate(model, set_type='train')
+    validate(trainer, set_type='validation')
+    validate(trainer, set_type='train')
 
     wandb.finish()
 
