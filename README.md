@@ -1,5 +1,5 @@
 <p align="center">
-    <img style="width: 35%; height: 35%" src="quimia4abc.svg">
+    <img style="width: 35%; height: 35%" src="quimia4abc.png">
 </p>
 These are a bunch of files used for training models for the QUMIA project.
 
