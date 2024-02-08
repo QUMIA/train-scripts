@@ -134,12 +134,36 @@ model = create_model()
 # Print a summary of the model
 summary(model, (image_channels, image_size, image_size), device=device.type)
 
-# Loss function and optimizer
-criterion = torch.nn.MSELoss()
+
+# Loss function
+#criterion = torch.nn.MSELoss()
+
+class_weights = torch.tensor([0.01, 0.04, 0.15, 0.80])
+
+def weighted_mse_loss(input, target):
+    assert input.shape == target.shape, "Input and target must have the same shape"
+
+    # Assign weights based on the target class
+    # This assumes targets are 1.0, 2.0, 3.0, and 4.0 for the classes
+    sample_weights = class_weights[target.long() - 1]
+
+    # Calculate MSE loss for each sample
+    mse = F.mse_loss(input, target, reduction='none')
+
+    # Weight the MSE loss by the sample weights
+    weighted_mse = mse * sample_weights
+
+    # Return the mean loss
+    return weighted_mse.mean()
+
+criterion = weighted_mse_loss
+
+
+# Optimizer
 optimizer = optim.Adam(model.parameters(), lr=config["learning_rate"])
 
 
-# Create a trainer
+# Create a trainer that holds all the objects
 trainer = QUMIA_Trainer(df_train, df_val, train_loader, validation_loader,
                         device, model, criterion, optimizer, output_dir)
 
