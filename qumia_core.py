@@ -1,3 +1,8 @@
+"""
+This file contains code to train models.
+"""
+
+
 import os
 import numpy as np
 import torch

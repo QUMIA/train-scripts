@@ -1,3 +1,8 @@
+"""
+This file contains code that allows setting the transformation of the image.
+The file contrains classes and functions that specify how Pytorch should load and iterate the data.
+"""
+
 import os
 import pandas as pd
 from PIL import Image
