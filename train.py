@@ -148,7 +148,7 @@ def weighted_mse_loss(input, target):
     sample_weights = class_weights[target.long() - 1]
 
     # Calculate MSE loss for each sample
-    mse = F.mse_loss(input, target, reduction='none')
+    mse = torch.nn.functional.mse_loss(input, target, reduction='none')
 
     # Weight the MSE loss by the sample weights
     weighted_mse = mse * sample_weights
