@@ -103,10 +103,10 @@ def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation'):
     
     # Convert predictions and labels to numpy arrays, and map back to original h_score values
     predictions = predictions.cpu().numpy().flatten()
-    predictions = np.array([QUMIA_Dataset.value_to_hscore(value) for value in predictions], dtype=np.float32)
+    predictions = np.array(predictions, dtype=np.float32)
     rounded_predictions = np.round(predictions)
     labels = labels.cpu().numpy().flatten()
-    labels = np.array([QUMIA_Dataset.value_to_hscore(value) for value in labels], dtype=np.float32)
+    labels = np.array(labels, dtype=np.float32)
     print(predictions.shape, labels.shape)
     print(rounded_predictions.dtype)
 
