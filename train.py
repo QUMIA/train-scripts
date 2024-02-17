@@ -139,6 +139,7 @@ summary(model, (image_channels, image_size, image_size), device=device.type)
 #criterion = torch.nn.MSELoss()
 
 class_weights = torch.tensor([0.01, 0.04, 0.15, 0.80])
+class_weights.to(device)
 
 def weighted_mse_loss(input, target):
     assert input.shape == target.shape, "Input and target must have the same shape"
