@@ -138,8 +138,7 @@ summary(model, (image_channels, image_size, image_size), device=device.type)
 # Loss function
 #criterion = torch.nn.MSELoss()
 
-#class_weights = torch.tensor([0.01195304017, 0.03527882809, 0.08486611199, 0.8679020198])
-class_weights = torch.tensor([0.25, 0.25, 0.25, 0.25])
+class_weights = torch.tensor([0.01195304017, 0.03527882809, 0.08486611199, 0.8679020198])
 class_weights = class_weights.to(device)
 
 def weighted_mse_loss(input, target):
