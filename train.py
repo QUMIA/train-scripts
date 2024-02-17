@@ -37,7 +37,7 @@ image_channels = 1
 config={
     "learning_rate": 0.001,
     "model": "QUMIA_Model",
-    "epochs": 1,
+    "epochs": 20,
     "image_size": image_size,
     "image_channels": image_channels,
     "model_layers": 5,
@@ -138,7 +138,8 @@ summary(model, (image_channels, image_size, image_size), device=device.type)
 # Loss function
 #criterion = torch.nn.MSELoss()
 
-class_weights = torch.tensor([0.01, 0.04, 0.15, 0.80])
+#class_weights = torch.tensor([0.01195304017, 0.03527882809, 0.08486611199, 0.8679020198])
+class_weights = torch.tensor([0.25, 0.25, 0.25, 0.25])
 class_weights = class_weights.to(device)
 
 def weighted_mse_loss(input, target):
