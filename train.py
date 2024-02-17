@@ -147,6 +147,7 @@ def weighted_mse_loss(input, target):
     # Assign weights based on the target class
     # This assumes targets are 1.0, 2.0, 3.0, and 4.0 for the classes
     sample_weights = class_weights[target.long() - 1]
+    sample_weights.to(device)
 
     # Calculate MSE loss for each sample
     mse = torch.nn.functional.mse_loss(input, target, reduction='none')
