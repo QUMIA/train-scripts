@@ -40,7 +40,9 @@ def train(num_epochs, trainer: QUMIA_Trainer):
         running_loss = 0.0
 
         for i, data in enumerate(train_loader, 0):
-            inputs, labels = data
+            inputs = data['image']
+            labels = data['label']
+            fuse_features = data['fuse_features']
             
             # Reshape labels to match output of model
             labels = labels.view(-1, 1).float()
@@ -48,6 +50,7 @@ def train(num_epochs, trainer: QUMIA_Trainer):
             # Move input and label tensors to the default device
             inputs = inputs.to(device)
             labels = labels.to(device)
+            fuse_features = fuse_features.to(device)
             
             # print the shape of the input and label tensors
             #print(inputs.shape, labels.shape)
@@ -55,7 +58,7 @@ def train(num_epochs, trainer: QUMIA_Trainer):
 
             optimizer.zero_grad()
 
-            outputs = model(inputs)
+            outputs = model(inputs, fuse_features)
             # print(outputs.shape)
             # print(outputs.dtype)
             
@@ -156,15 +159,17 @@ def make_predictions(trainer: QUMIA_Trainer, dataloader, n_batches=None):
     with torch.no_grad():
         running_loss = 0.0
         for index, batch in enumerate(dataloader, 0): # tqdm(dataloader, total=len(dataloader), desc="Performing predictions on validation data"):
-            inputs, batch_labels = batch
-            batch_labels = batch_labels.view(-1, 1).float()
+            inputs = batch['image']
+            batch_labels = batch['label'].view(-1, 1).float()
+            fuse_features = batch['fuse_features']
 
             # Move input and label tensors to the default device
             inputs = inputs.to(trainer.device)
             batch_labels = batch_labels.to(trainer.device)
+            fuse_features = fuse_features.to(trainer.device)
 
             # Forward pass
-            outputs = trainer.model(inputs)
+            outputs = trainer.model(inputs, fuse_features)
 
             # Save predictions and labels
             predictions.append(outputs)
