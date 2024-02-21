@@ -1,3 +1,9 @@
+"""
+
+This file contains code to make confusion matrices from results after a run of the main learning algorithms. 
+The confusion matrices can be written to csv files with code here.
+"""
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt

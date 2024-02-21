@@ -1,3 +1,8 @@
+"""
+This file contains code to train models.
+"""
+
+
 import os
 import numpy as np
 import torch
@@ -135,8 +140,9 @@ def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation'):
 
 
 def make_predictions(trainer: QUMIA_Trainer, dataloader, n_batches=None):
-    """ Make predictions on the given dataloader (train / validation / test data) using the given model.
+    """ Makes predictions on the given dataloader (train / validation / test data) using the given model.
         It will return the predictions and the ground-truth labels.
+        
     """
     trainer.model.eval()  # Set the model to evaluation mode
 

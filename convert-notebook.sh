@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# this converts notebooks into scripts
 
 # exclude cells with tag 'exclude'
 # exclude markdown cells
