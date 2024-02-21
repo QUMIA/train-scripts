@@ -1,6 +1,6 @@
 """
-This file contains code that allows setting the transformation of the image.
-The file contrains classes and functions that specify how Pytorch should load and iterate the data.
+Dataset class that specifies how Pytorch should load and iterate the data.
+Also keeps a reference to and applies the transformations to the image.
 """
 
 import os
