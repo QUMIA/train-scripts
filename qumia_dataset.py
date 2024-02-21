@@ -1,3 +1,8 @@
+"""
+Dataset class that specifies how Pytorch should load and iterate the data.
+Also keeps a reference to and applies the transformations to the image.
+"""
+
 import os
 import pandas as pd
 from PIL import Image

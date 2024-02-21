@@ -1,3 +1,6 @@
+"""
+This file contains the class that is the PyTorch model.
+"""
 import torch.nn as nn
 
 class QUMIA_Model(nn.Module):
