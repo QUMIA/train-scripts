@@ -31,4 +31,10 @@ class QUMIA_Dataset(Dataset):
         if self.transform:
             image = self.transform(image=image)["image"]
 
-        return image, label
+        fuse_features = torch.tensor([row["bmi"], row["Age_exam"]], dtype=torch.float)
+
+        return {
+            "image": image,
+            "label": label,
+            "fuse_features": fuse_features
+        }
