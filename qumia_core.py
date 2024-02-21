@@ -142,7 +142,6 @@ def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation'):
 def make_predictions(trainer: QUMIA_Trainer, dataloader, n_batches=None):
     """ Makes predictions on the given dataloader (train / validation / test data) using the given model.
         It will return the predictions and the ground-truth labels.
-        
     """
     trainer.model.eval()  # Set the model to evaluation mode
 
@@ -178,3 +177,28 @@ def make_predictions(trainer: QUMIA_Trainer, dataloader, n_batches=None):
         loss = running_loss / len(dataloader)
 
     return torch.cat(predictions), torch.cat(labels), loss
+
+
+
+def get_weighted_loss_function(class_weights):
+
+    def weighted_mse_loss(input, target):
+        """ Weighted MSE loss function.
+            This function is used to calculate the loss of the model.
+        """
+        assert input.shape == target.shape, "Input and target must have the same shape"
+
+        # Assign weights based on the target class
+        # This assumes targets are 1.0, 2.0, 3.0, and 4.0 for the classes
+        sample_weights = class_weights[target.long() - 1]
+
+        # Calculate MSE loss for each sample
+        mse = torch.nn.functional.mse_loss(input, target, reduction='none')
+
+        # Weight the MSE loss by the sample weights
+        weighted_mse = mse * sample_weights
+
+        # Return the mean loss
+        return weighted_mse.mean()
+
+    return weighted_mse_loss
