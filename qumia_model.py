@@ -23,9 +23,17 @@ class QUMIA_Model(nn.Module):
         self.fc2 = nn.Linear(fully_connected_size, 1)
 
     def forward(self, x):
+        # Convolutional layers
         for conv in self.conv_layers:
             x = self.pool(nn.functional.relu(conv(x)))
-        x = x.view(-1, self.fc1_in_size)
+
+        # Flatten output of convolutional layers
+        x = x.view(-1, self.conv_out_size)
+
+        # Add the fuse features to the fully connected layer
+        # x = torch.cat((x, fuse_features), dim=1)
+
+        # Fully connected layers
         x = nn.functional.relu(self.fc1(x))
         x = self.fc2(x)
         return x

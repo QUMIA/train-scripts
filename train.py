@@ -37,7 +37,7 @@ image_channels = 1
 config={
     "learning_rate": 0.001,
     "model": "QUMIA_Model",
-    "epochs": 20,
+    "epochs": 1,
     "image_size": image_size,
     "image_channels": image_channels,
     "model_layers": 5,
@@ -71,7 +71,8 @@ print("Device: " + str(device))
 # Read data
 df_train = pd.read_csv(os.path.join(data_dir, 'split_train.csv'))
 df_val = pd.read_csv(os.path.join(data_dir, 'split_val.csv'))
-print(df_train.shape, df_val.shape)
+df_test = pd.read_csv(os.path.join(data_dir, 'split_test.csv'))
+print(df_train.shape, df_val.shape, df_test.shape)
 
 
 elastic_alpha = 480.0
@@ -88,7 +89,7 @@ train_transform = A.Compose(
     ]
 )
 
-validation_transform = A.Compose(
+evaluation_transform = A.Compose(
     [
         A.Resize(image_size, image_size),
         A.Normalize(mean=(0.5,), std=(0.225,)),
@@ -102,8 +103,12 @@ train_dataset = QUMIA_Dataset(df_train, transform=train_transform, data_dir=data
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=8)
 
 # Create dataset and dataloader for the validation data (no shuffle)
-validation_dataset = QUMIA_Dataset(df_val, transform=validation_transform, data_dir=data_dir_images)
+validation_dataset = QUMIA_Dataset(df_val, transform=evaluation_transform, data_dir=data_dir_images)
 validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False, num_workers=8)
+
+# Create dataset and dataloader for the test data (no shuffle)
+test_dataset = QUMIA_Dataset(df_test, transform=evaluation_transform, data_dir=data_dir_images)
+test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=8)
 
 
 def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
@@ -132,6 +137,9 @@ def create_model():
 model = create_model()
 
 # Print a summary of the model
+# with feature fusion:
+# summary(model, input_data=[(1, image_channels, image_size, image_size), (1, 2)], device=device.type)
+
 summary(model, (image_channels, image_size, image_size), device=device.type)
 
 
@@ -165,7 +173,7 @@ optimizer = optim.Adam(model.parameters(), lr=config["learning_rate"])
 
 
 # Create a trainer that holds all the objects
-trainer = QUMIA_Trainer(df_train, df_val, train_loader, validation_loader,
+trainer = QUMIA_Trainer(df_train, df_val, df_test, train_loader, validation_loader, test_loader,
                         device, model, criterion, optimizer, output_dir)
 
 
