@@ -175,26 +175,26 @@ summary(model, (image_channels, image_size, image_size), device=device.type)
 # Loss function
 #criterion = torch.nn.MSELoss()
 
-class_weights = torch.tensor([0.01195304017, 0.03527882809, 0.08486611199, 0.8679020198])
-class_weights = class_weights.to(device)
+# class_weights = torch.tensor([0.01195304017, 0.03527882809, 0.08486611199, 0.8679020198])
+# class_weights = class_weights.to(device)
 
-def weighted_mse_loss(input, target):
-    assert input.shape == target.shape, "Input and target must have the same shape"
+# def weighted_mse_loss(input, target):
+#     assert input.shape == target.shape, "Input and target must have the same shape"
 
-    # Assign weights based on the target class
-    # This assumes targets are 1.0, 2.0, 3.0, and 4.0 for the classes
-    sample_weights = class_weights[target.long() - 1]
+#     # Assign weights based on the target class
+#     # This assumes targets are 1.0, 2.0, 3.0, and 4.0 for the classes
+#     sample_weights = class_weights[target.long() - 1]
 
-    # Calculate MSE loss for each sample
-    mse = torch.nn.functional.mse_loss(input, target, reduction='none')
+#     # Calculate MSE loss for each sample
+#     mse = torch.nn.functional.mse_loss(input, target, reduction='none')
 
-    # Weight the MSE loss by the sample weights
-    weighted_mse = mse * sample_weights
+#     # Weight the MSE loss by the sample weights
+#     weighted_mse = mse * sample_weights
 
-    # Return the mean loss
-    return weighted_mse.mean()
+#     # Return the mean loss
+#     return weighted_mse.mean()
 
-criterion = weighted_mse_loss
+criterion = torch.nn.MSELoss()
 
 
 # Optimizer
