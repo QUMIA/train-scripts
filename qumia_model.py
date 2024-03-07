@@ -28,7 +28,7 @@ class QUMIA_Model(nn.Module):
             x = self.pool(nn.functional.relu(conv(x)))
 
         # Flatten output of convolutional layers
-        x = x.view(-1, self.conv_out_size)
+        x = x.view(-1, self.fc1_in_size)
 
         # Add the fuse features to the fully connected layer
         # x = torch.cat((x, fuse_features), dim=1)
