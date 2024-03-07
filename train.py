@@ -37,7 +37,7 @@ image_channels = 1
 config={
     "learning_rate": 0.001,
     "model": "QUMIA_Model",
-    "epochs": 1,
+    "epochs": 20,
     "image_size": image_size,
     "image_channels": image_channels,
     "model_layers": 5,
