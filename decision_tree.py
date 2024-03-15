@@ -16,19 +16,20 @@ get_ipython().run_line_magic('autoreload', '2')
 
 
 # Read and concatenate the data sets (just use all of them for now)
-df1 = pd.read_csv("/projects/0/einf6214/output/2024-02-17_21-34-45_accurate-weights/output/df_validation_predictions.csv")
-df2 = pd.read_csv("/projects/0/einf6214/output/2024-02-17_21-34-45_accurate-weights/output/df_train_predictions.csv")
+df1 = pd.read_csv("df_validation_predictions.csv")
+df2 = pd.read_csv("df_train_predictions.csv")
 #df3 = pd.read_csv("/projects/0/einf6214/output/2024-03-06_18-23-27_test-test-set/output/df_test_predictions.csv")
 df = pd.concat([df1, df2])
 print(df.shape)
-df.head(25)
+print(df.columns.values)
 
 
 input_column = 'muscle'
-input_value_column = 'h_score'
+input_value_column = 'prediction'
 print(df[input_column].value_counts())
-#input_values = df[input_column].unique()
-input_values = ['Biceps','RF','TA','GM','VL','Deltoid']
+input_values = df[input_column].unique() # all muscles
+#input_values = input_values[input_values != 'Extensors'] # remove Extensors
+#input_values = ['Biceps','RF','TA','GM','VL','Deltoid'] # six most common muscles
 value_to_index = {value: idx for idx, value in enumerate(input_values)}
 print(value_to_index)
 
@@ -207,10 +208,10 @@ from sklearn.model_selection import train_test_split
 mlp_classifier = MLPClassifier(hidden_layer_sizes=(50,), activation='relu', solver='adam', max_iter=500)
 
 # Train the model
-# mlp_classifier.fit(X_train, y_train)
+mlp_classifier.fit(X_train, y_train)
 
 # Evaluate the model
-# print_f1_score(X_train, y_train, X_test, y_test)
+print_f1_score(X_train, y_train, X_test, y_test)
 
 
 # import shap
@@ -282,15 +283,16 @@ from qumia_model2 import MaskedClassifier
 from torchsummary import summary
 
 # Define the model, loss function, and optimizer
-model = MaskedClassifier(6)
+vector_length = len(input_values)
+model = MaskedClassifier(vector_length)
 criterion = nn.BCEWithLogitsLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # print model summary
-summary(model, (2, 6))
+summary(model, (2, vector_length))
 
 # Training the model
-num_epochs = 5  # Set the number of epochs
+num_epochs = 20  # Set the number of epochs
 for epoch in range(num_epochs):
     for inputs, labels in train_loader:
         # Forward pass
@@ -348,4 +350,7 @@ with torch.no_grad():
 f1 = f1_score(all_labels, all_predictions, average='binary')  # 'binary' for binary classification tasks
 print(f'F1 Score: {f1:.4f}')
 print(f'Accuracy: {correct_predictions / total_predictions:.4f}')
+
+
+
 
