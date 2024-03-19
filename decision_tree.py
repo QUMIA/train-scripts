@@ -24,8 +24,9 @@ print(df.shape)
 print(df.columns.values)
 
 
+# Input
 input_column = 'muscle'
-input_value_column = 'prediction'
+input_value_column = 'h_score'
 print(df[input_column].value_counts())
 input_values = df[input_column].unique() # all muscles
 #input_values = input_values[input_values != 'Extensors'] # remove Extensors
@@ -34,6 +35,9 @@ value_to_index = {value: idx for idx, value in enumerate(input_values)}
 print(value_to_index)
 
 
+# Output
+use_diagnosis = True
+
 # Remove diagnosis 99
 df = df[df['diagnosis'] != 99]
 print(df['diagnosis'].value_counts())
@@ -41,6 +45,8 @@ print(df['diagnosis'].value_counts())
 
 # Aggregate the h_scores for each muscle
 df_agg = df.groupby(['exam_id', input_column]).agg({'prediction': 'max', 'h_score': 'max', 'diagnosis': 'first'}).reset_index()
+# df_agg['h_score'] = np.random.normal(2, 1.0, df_agg.shape[0])
+# df_agg['h_score'] = 1.0
 df_agg.head(25)
 
 
@@ -56,7 +62,10 @@ def create_vectors(df):
             value_index = value_to_index[muscle]
             input_vectors[exam_id][value_index] = row[input_value_column]
             #diagnosis_index = diagnosis_to_index[row['diagnosis']]
-            label_vectors[exam_id] = row['diagnosis'] != 0
+            if use_diagnosis:
+                label_vectors[exam_id] = row['diagnosis']
+            else:
+                label_vectors[exam_id] = row['diagnosis'] != 0
 
     # Convert the dictionary to a DataFrame for easy handling/viewing
     input_df = pd.DataFrame.from_dict(input_vectors, orient='index', columns=input_values)
@@ -200,18 +209,18 @@ def print_f1_score(X_train, Y_train, X_test, y_test):
     print(f"F1 score (test): {f1_score_test:.2f}")
 
 
-from sklearn.neural_network import MLPClassifier
-from sklearn.model_selection import train_test_split
+# from sklearn.neural_network import MLPClassifier
+# from sklearn.model_selection import train_test_split
 
 
-# Initialize the MLPClassifier
-mlp_classifier = MLPClassifier(hidden_layer_sizes=(50,), activation='relu', solver='adam', max_iter=500)
+# # Initialize the MLPClassifier
+# mlp_classifier = MLPClassifier(hidden_layer_sizes=(50,), activation='relu', solver='adam', max_iter=500)
 
-# Train the model
-mlp_classifier.fit(X_train, y_train)
+# # Train the model
+# mlp_classifier.fit(X_train, y_train)
 
-# Evaluate the model
-print_f1_score(X_train, y_train, X_test, y_test)
+# # Evaluate the model
+# print_f1_score(X_train, y_train, X_test, y_test)
 
 
 # import shap
@@ -256,10 +265,16 @@ print(X_test_masked.shape)
 def boolean_df_to_int_array(df):
     return df.astype(int).to_numpy()
 
-y_train_int = boolean_df_to_int_array(y_train)
-print(y_train_int[0:10])
-y_test_int = boolean_df_to_int_array(y_test)
-print(y_test_int[0:10])
+if use_diagnosis:
+    y_train_int = y_train.astype(int).to_numpy()
+    print(y_train_int[0:10])
+    y_test_int = y_test.astype(int).to_numpy()
+    print(y_test_int[0:10])
+else:
+    y_train_int = boolean_df_to_int_array(y_train)
+    print(y_train_int[0:10])
+    y_test_int = boolean_df_to_int_array(y_test)
+    print(y_test_int[0:10])
 
 
 from torch.utils.data import Dataset, DataLoader
@@ -284,8 +299,9 @@ from torchsummary import summary
 
 # Define the model, loss function, and optimizer
 vector_length = len(input_values)
-model = MaskedClassifier(vector_length)
-criterion = nn.BCEWithLogitsLoss()
+num_classes = len(label_values) if use_diagnosis else 1
+model = MaskedClassifier(vector_length, num_classes)
+criterion = nn.CrossEntropyLoss() if use_diagnosis else nn.BCEWithLogitsLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # print model summary
@@ -297,7 +313,8 @@ for epoch in range(num_epochs):
     for inputs, labels in train_loader:
         # Forward pass
         outputs = model(inputs)
-        loss = criterion(outputs, labels.float())
+        target = labels.squeeze() if use_diagnosis else labels.float()
+        loss = criterion(outputs, target)
         
         # Backward and optimize
         optimizer.zero_grad()
@@ -309,13 +326,13 @@ for epoch in range(num_epochs):
 
 
 # Evaluate the model
-# model.eval()  # Set the model to evaluation mode
-# with torch.no_grad():
-#     test_preds = model(X_test_tensor)
-#     _, predicted_classes = torch.max(test_preds, 1)
-#     matches = (predicted_classes == y_test_tensor.squeeze())
-#     accuracy = matches.sum().float().item() / y_test_tensor.size(0)
-#     print(f'Accuracy: {accuracy:.4f}')
+model.eval()  # Set the model to evaluation mode
+with torch.no_grad():
+    test_preds = model(X_test_tensor)
+    _, predicted_classes = torch.max(test_preds, 1)
+    matches = (predicted_classes == y_test_tensor.squeeze())
+    accuracy = matches.sum().float().item() / y_test_tensor.size(0)
+    print(f'Accuracy: {accuracy:.4f}')
 
 
 import torch
@@ -333,23 +350,68 @@ total_predictions = 0
 with torch.no_grad():
     for inputs, labels in test_loader:
         outputs = model(inputs)
-        # Apply sigmoid to the outputs to get the probabilities
-        probs = torch.sigmoid(outputs.squeeze())  # Squeeze to remove unnecessary dimensions
-        # Convert probabilities to binary predictions using a threshold of 0.5
-        predictions = (probs >= 0.5).long()  # Convert to long to match labels type
-        
-        # Collect the predictions and true labels (for f1 score)
-        all_predictions.extend(predictions.tolist())
-        all_labels.extend(labels.tolist())
 
-        # Compare predictions to true labels (for accuracy)
-        correct_predictions += (predictions == labels.squeeze()).sum().item()
-        total_predictions += labels.size(0)
+        if use_diagnosis:
+            # Get the predicted classes by finding the max logit value
+            _, predicted_classes = torch.max(outputs, 1)
+            
+            # Collect the predictions and true labels
+            all_predictions.extend(predicted_classes.tolist())
+            all_labels.extend(labels.tolist())
 
-# Calculate the F1 score
-f1 = f1_score(all_labels, all_predictions, average='binary')  # 'binary' for binary classification tasks
-print(f'F1 Score: {f1:.4f}')
+            correct_predictions += (predicted_classes == labels.squeeze()).sum().item()
+            total_predictions += labels.size(0)
+
+        else:
+
+            # Apply sigmoid to the outputs to get the probabilities
+            probs = torch.sigmoid(outputs.squeeze())  # Squeeze to remove unnecessary dimensions
+            # Convert probabilities to binary predictions using a threshold of 0.5
+            predictions = (probs >= 0.5).long()  # Convert to long to match labels type
+            
+            # Collect the predictions and true labels (for f1 score)
+            all_predictions.extend(predictions.tolist())
+            all_labels.extend(labels.tolist())
+
+            # Compare predictions to true labels (for accuracy)
+            correct_predictions += (predictions == labels.squeeze()).sum().item()
+            total_predictions += labels.size(0)
+
+if use_diagnosis:
+    # Calculate the F1 score (choose 'macro', 'micro', or 'weighted' as per your requirement)
+    f1_macro = f1_score(all_labels, all_predictions, average='macro')
+    f1_micro = f1_score(all_labels, all_predictions, average='micro')
+    f1_weighted = f1_score(all_labels, all_predictions, average='weighted')
+
+    print(f'F1 Score (Macro): {f1_macro:.4f}')
+    print(f'F1 Score (Micro): {f1_micro:.4f}')
+    print(f'F1 Score (Weighted): {f1_weighted:.4f}')
+    
+    from sklearn.metrics import classification_report
+    # all_classes = np.array(label_values)
+    # unique_labels = np.unique(np.concatenate((all_classes, all_predictions)))
+    # print(unique_labels)
+    report = classification_report(all_labels, all_predictions)
+    print(report)
+    
+else:
+    # Calculate the F1 score
+    f1 = f1_score(all_labels, all_predictions, average='binary')  # 'binary' for binary classification tasks
+    print(f'F1 Score: {f1:.4f}')
+
 print(f'Accuracy: {correct_predictions / total_predictions:.4f}')
+
+
+label_values.astype(int)
+
+
+import torch
+if torch.backends.mps.is_available():
+    mps_device = torch.device("mps")
+    x = torch.ones(1, device=mps_device)
+    print (x)
+else:
+    print ("MPS device not found.")
 
 
 
