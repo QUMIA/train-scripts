@@ -36,7 +36,7 @@ print(value_to_index)
 
 
 # Output
-use_diagnosis = True
+use_diagnosis = False
 
 # Remove diagnosis 99
 df = df[df['diagnosis'] != 99]
@@ -46,12 +46,12 @@ print(df['diagnosis'].value_counts())
 # Aggregate the h_scores for each muscle
 df_agg = df.groupby(['exam_id', input_column]).agg({'prediction': 'max', 'h_score': 'max', 'diagnosis': 'first'}).reset_index()
 # df_agg['h_score'] = np.random.normal(2, 1.0, df_agg.shape[0])
-# df_agg['h_score'] = 1.0
+df_agg['h_score'] = 1.0
 df_agg.head(25)
 
 
 def create_vectors(df):
-    input_vectors = {id: np.full(len(input_values), np.nan) for id in df['exam_id'].unique()}
+    input_vectors = {id: np.full(len(input_values), 1.0) for id in df['exam_id'].unique()}
     label_vectors = {id: False for id in df['exam_id'].unique()}
 
     # Populate the vectors
@@ -326,13 +326,13 @@ for epoch in range(num_epochs):
 
 
 # Evaluate the model
-model.eval()  # Set the model to evaluation mode
-with torch.no_grad():
-    test_preds = model(X_test_tensor)
-    _, predicted_classes = torch.max(test_preds, 1)
-    matches = (predicted_classes == y_test_tensor.squeeze())
-    accuracy = matches.sum().float().item() / y_test_tensor.size(0)
-    print(f'Accuracy: {accuracy:.4f}')
+# model.eval()  # Set the model to evaluation mode
+# with torch.no_grad():
+#     test_preds = model(X_test_tensor)
+#     _, predicted_classes = torch.max(test_preds, 1)
+#     matches = (predicted_classes == y_test_tensor.squeeze())
+#     accuracy = matches.sum().float().item() / y_test_tensor.size(0)
+#     print(f'Accuracy: {accuracy:.4f}')
 
 
 import torch
@@ -400,9 +400,6 @@ else:
     print(f'F1 Score: {f1:.4f}')
 
 print(f'Accuracy: {correct_predictions / total_predictions:.4f}')
-
-
-label_values.astype(int)
 
 
 import torch
