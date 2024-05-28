@@ -131,9 +131,9 @@ def value_to_hscore(y):
 
     # Handle cases where y is outside the bounds of the values list
     if y <= values[0]:
-        return 1
+        return 1.0
     if y >= values[-1]:
-        return len(values)
+        return 1.0 * len(values)
 
     # Find the two closest numbers that y falls between
     for i in range(len(values) - 1):
@@ -146,13 +146,22 @@ def value_to_hscore(y):
     fraction = (y - lower_bound) / (upper_bound - lower_bound)
 
     # Return the interpolated index
-    return i + fraction + 1
+    return 1.0 * i + fraction + 1.0
 
 
 def hscore_to_value(hscore):
-    return [0, 8, 12, 14][int(hscore) - 1]
+    values = [0, 8, 12, 14]
+    index = int(hscore) - 1
 
-print(value_to_hscore(13))
+    # Handle cases where hscore is outside the valid index range
+    if index < 0:
+        return values[0]
+    if index >= len(values):
+        return values[-1]
+
+    return values[index]
+
+#print(value_to_hscore(13))
 
 
 def create_model():
@@ -220,4 +229,7 @@ def main():
 # Check if we are running as a script and not in a notebook
 if __name__ == '__main__' and '__file__' in globals():
     main()
+
+
+
 
