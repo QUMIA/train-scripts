@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 import torch
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torchsummary import summary
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
@@ -37,7 +37,7 @@ image_channels = 1
 config={
     "learning_rate": 0.001,
     "model": "QUMIA_Model",
-    "epochs": 1,
+    "epochs": 2,
     "image_size": image_size,
     "image_channels": image_channels,
     "model_layers": 5,
@@ -100,15 +100,18 @@ evaluation_transform = A.Compose(
 
 # Create dataset and dataloader for the train data
 train_dataset = QUMIA_Dataset(df_train, transform=train_transform, data_dir=data_dir_images)
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=8)
+train_subset = Subset(train_dataset, range(10))
+train_loader = DataLoader(train_subset, batch_size=32, shuffle=True, num_workers=8)
 
 # Create dataset and dataloader for the validation data (no shuffle)
 validation_dataset = QUMIA_Dataset(df_val, transform=evaluation_transform, data_dir=data_dir_images)
-validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False, num_workers=8)
+validation_subset = Subset(validation_dataset, range(3))
+validation_loader = DataLoader(validation_subset, batch_size=32, shuffle=False, num_workers=8)
 
 # Create dataset and dataloader for the test data (no shuffle)
 test_dataset = QUMIA_Dataset(df_test, transform=evaluation_transform, data_dir=data_dir_images)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=8)
+test_subset = Subset(test_dataset, range(3))
+test_loader = DataLoader(test_subset, batch_size=32, shuffle=False, num_workers=8)
 
 
 def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
@@ -229,6 +232,32 @@ def main():
 # Check if we are running as a script and not in a notebook
 if __name__ == '__main__' and '__file__' in globals():
     main()
+
+
+def value_to_hscore(y):
+    values = [0, 8, 12, 14]
+
+    # Handle cases where y is outside the bounds of the values list
+    if y <= values[0]:
+        return 1.0
+    if y >= values[-1]:
+        return 1.0 * len(values)
+
+    # Find the two closest numbers that y falls between
+    for i in range(len(values) - 1):
+        if values[i] <= y <= values[i + 1]:
+            lower_bound = values[i]
+            upper_bound = values[i + 1]
+            break
+
+    # Calculate the fractional position of y between these two numbers
+    fraction = (y - lower_bound) / (upper_bound - lower_bound)
+
+    # Return the interpolated index
+    return 1.0 * i + fraction + 1.0
+
+# test on nan value
+#print(value_to_hscore(float('nan')))
 
 
 
