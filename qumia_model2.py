@@ -2,6 +2,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class MaskedClassifier(nn.Module):
+    """ This is a small fully connected neural network with a single hidden layer.
+        It suppports input masking by applying 1x1 convolutional kernels to the input.
+        The model is used to predict the diagnosis or healthy/non-healthy based on
+        input vectors containing h-scores for each muscle.
+    """
 
     def __init__(self, vector_length=16, num_classes=1):
         super(MaskedClassifier, self).__init__()

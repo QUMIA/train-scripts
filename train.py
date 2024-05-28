@@ -169,7 +169,7 @@ model = create_model()
 # with feature fusion:
 # summary(model, input_data=[(1, image_channels, image_size, image_size), (1, 2)], device=device.type)
 
-summary(model, (image_channels, image_size, image_size), device=device.type)
+#summary(model, (image_channels, image_size, image_size), device=device.type)
 
 
 # Loss function
