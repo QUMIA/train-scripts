@@ -100,17 +100,17 @@ evaluation_transform = A.Compose(
 
 # Create dataset and dataloader for the train data
 train_dataset = QUMIA_Dataset(df_train, transform=train_transform, data_dir=data_dir_images)
-train_subset = Subset(train_dataset, range(10))
+train_subset = Subset(train_dataset, range(100))
 train_loader = DataLoader(train_subset, batch_size=32, shuffle=True, num_workers=8)
 
 # Create dataset and dataloader for the validation data (no shuffle)
 validation_dataset = QUMIA_Dataset(df_val, transform=evaluation_transform, data_dir=data_dir_images)
-validation_subset = Subset(validation_dataset, range(3))
+validation_subset = Subset(validation_dataset, range(30))
 validation_loader = DataLoader(validation_subset, batch_size=32, shuffle=False, num_workers=8)
 
 # Create dataset and dataloader for the test data (no shuffle)
 test_dataset = QUMIA_Dataset(df_test, transform=evaluation_transform, data_dir=data_dir_images)
-test_subset = Subset(test_dataset, range(3))
+test_subset = Subset(test_dataset, range(30))
 test_loader = DataLoader(test_subset, batch_size=32, shuffle=False, num_workers=8)
 
 
