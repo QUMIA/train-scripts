@@ -7,11 +7,12 @@ import torch
 import numpy as np
 
 class QUMIA_Dataset(Dataset):
-    def __init__(self, dataframe, transform=None, data_dir=None, num_classes=4):
+    def __init__(self, dataframe, transform=None, data_dir=None, num_classes=4, fuse_features=[]):
         self.data = dataframe
         self.transform = transform
         self.data_dir = data_dir
         self.num_classes = num_classes
+        self.fuse_features = fuse_features
 
     def __len__(self):
         return len(self.data)
@@ -32,7 +33,7 @@ class QUMIA_Dataset(Dataset):
         if self.transform:
             image = self.transform(image=image)["image"]
 
-        fuse_features = torch.tensor([row["bmi"], row["Age_exam"]], dtype=torch.float)
+        fuse_features = torch.tensor([row[feature_name] for feature_name in self.fuse_features], dtype=torch.float)
 
         if torch.isnan(fuse_features).any():
             print(f"Fuse features are NaN for {img_path}")

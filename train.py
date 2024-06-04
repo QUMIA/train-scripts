@@ -32,6 +32,10 @@ else:
 print(sessionLabel)
 
 
+def is_running_as_script():
+    return __name__ == '__main__' and '__file__' in globals()
+
+
 image_size = 448
 image_channels = 1
 config={
@@ -98,20 +102,24 @@ evaluation_transform = A.Compose(
 )
 
 
+#fuse_features = ["bmi", "Age_exam"]
+fuse_features = []
+use_subset = not is_running_as_script()
+
 # Create dataset and dataloader for the train data
-train_dataset = QUMIA_Dataset(df_train, transform=train_transform, data_dir=data_dir_images)
-#train_subset = Subset(train_dataset, range(1000))
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=8)
+train_dataset = QUMIA_Dataset(df_train, transform=train_transform, data_dir=data_dir_images, fuse_features=fuse_features)
+train_subset = Subset(train_dataset, range(100))
+train_loader = DataLoader(train_subset if use_subset else train_dataset, batch_size=32, shuffle=True, num_workers=8)
 
 # Create dataset and dataloader for the validation data (no shuffle)
-validation_dataset = QUMIA_Dataset(df_val, transform=evaluation_transform, data_dir=data_dir_images)
-#validation_subset = Subset(validation_dataset, range(300))
-validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False, num_workers=8)
+validation_dataset = QUMIA_Dataset(df_val, transform=evaluation_transform, data_dir=data_dir_images, fuse_features=fuse_features)
+validation_subset = Subset(validation_dataset, range(30))
+validation_loader = DataLoader(validation_subset if use_subset else validation_dataset, batch_size=32, shuffle=False, num_workers=8)
 
 # Create dataset and dataloader for the test data (no shuffle)
-test_dataset = QUMIA_Dataset(df_test, transform=evaluation_transform, data_dir=data_dir_images)
-#test_subset = Subset(test_dataset, range(300))
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=8)
+test_dataset = QUMIA_Dataset(df_test, transform=evaluation_transform, data_dir=data_dir_images, fuse_features=fuse_features)
+test_subset = Subset(test_dataset, range(30))
+test_loader = DataLoader(test_subset if use_subset else test_dataset, batch_size=32, shuffle=False, num_workers=8)
 
 
 def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
@@ -169,7 +177,8 @@ def hscore_to_value(hscore):
 
 def create_model():
     model = QUMIA_Model(config["image_channels"], image_size, config["model_layers"], 
-                        config["model_first_out_channels"], config["model_fully_connected_size"])
+                        config["model_first_out_channels"], config["model_fully_connected_size"],
+                        len(fuse_features))
     model.to(device)
     return model
 
@@ -230,7 +239,7 @@ def main():
         validate(trainer, set_type="validation")
 
 # Check if we are running as a script and not in a notebook
-if __name__ == '__main__' and '__file__' in globals():
+if is_running_as_script():
     main()
 
 
