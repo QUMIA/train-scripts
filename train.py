@@ -102,8 +102,8 @@ evaluation_transform = A.Compose(
 )
 
 
-#fuse_features = ["bmi", "Age_exam"]
-fuse_features = []
+fuse_features = ["bmi", "Age_exam"]
+#fuse_features = []
 use_subset = not is_running_as_script()
 
 # Create dataset and dataloader for the train data
