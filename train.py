@@ -138,39 +138,41 @@ def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
 
 
 def value_to_hscore(y):
-    values = [0, 8, 12, 14]
+    return y
+    # values = [0, 8, 12, 14]
 
-    # Handle cases where y is outside the bounds of the values list
-    if y <= values[0]:
-        return 1.0
-    if y >= values[-1]:
-        return 1.0 * len(values)
+    # # Handle cases where y is outside the bounds of the values list
+    # if y <= values[0]:
+    #     return 1.0
+    # if y >= values[-1]:
+    #     return 1.0 * len(values)
 
-    # Find the two closest numbers that y falls between
-    for i in range(len(values) - 1):
-        if values[i] <= y <= values[i + 1]:
-            lower_bound = values[i]
-            upper_bound = values[i + 1]
-            break
+    # # Find the two closest numbers that y falls between
+    # for i in range(len(values) - 1):
+    #     if values[i] <= y <= values[i + 1]:
+    #         lower_bound = values[i]
+    #         upper_bound = values[i + 1]
+    #         break
 
-    # Calculate the fractional position of y between these two numbers
-    fraction = (y - lower_bound) / (upper_bound - lower_bound)
+    # # Calculate the fractional position of y between these two numbers
+    # fraction = (y - lower_bound) / (upper_bound - lower_bound)
 
-    # Return the interpolated index
-    return 1.0 * i + fraction + 1.0
+    # # Return the interpolated index
+    # return 1.0 * i + fraction + 1.0
 
 
 def hscore_to_value(hscore):
-    values = [0, 8, 12, 14]
-    index = int(hscore) - 1
+    return hscore
+    # values = [0, 8, 12, 14]
+    # index = int(hscore) - 1
 
-    # Handle cases where hscore is outside the valid index range
-    if index < 0:
-        return values[0]
-    if index >= len(values):
-        return values[-1]
+    # # Handle cases where hscore is outside the valid index range
+    # if index < 0:
+    #     return values[0]
+    # if index >= len(values):
+    #     return values[-1]
 
-    return values[index]
+    # return values[index]
 
 #print(value_to_hscore(13))
 
@@ -241,33 +243,4 @@ def main():
 # Check if we are running as a script and not in a notebook
 if is_running_as_script():
     main()
-
-
-def value_to_hscore(y):
-    values = [0, 8, 12, 14]
-
-    # Handle cases where y is outside the bounds of the values list
-    if y <= values[0]:
-        return 1.0
-    if y >= values[-1]:
-        return 1.0 * len(values)
-
-    # Find the two closest numbers that y falls between
-    for i in range(len(values) - 1):
-        if values[i] <= y <= values[i + 1]:
-            lower_bound = values[i]
-            upper_bound = values[i + 1]
-            break
-
-    # Calculate the fractional position of y between these two numbers
-    fraction = (y - lower_bound) / (upper_bound - lower_bound)
-
-    # Return the interpolated index
-    return 1.0 * i + fraction + 1.0
-
-# test on nan value
-#print(value_to_hscore(float('nan')))
-
-
-
 
