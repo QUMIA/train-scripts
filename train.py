@@ -60,7 +60,7 @@ wandb.init(
 
 # Data directories
 data_dir = '/projects/0/einf6214/data'
-data_dir_images = os.path.join(data_dir, 'merged')
+data_dir_images = os.path.join(data_dir, 'masked')
 
 # Output dir (relative to code; we assume a dedicated directory with the copied code for each session, see run_session.sh)
 output_dir = 'output'
