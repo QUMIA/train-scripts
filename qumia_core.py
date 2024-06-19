@@ -16,13 +16,11 @@ class QUMIA_Trainer:
         (So we're not passing around a bunch of arguments to functions all the time.)
     """
 
-    def __init__(self, df_train, df_validation, df_test, train_loader, validation_loader, test_loader, device, model, criterion, optimizer, output_dir):
+    def __init__(self, df_train, df_validation, train_loader, validation_loader, device, model, criterion, optimizer, output_dir):
         self.df_train = df_train
         self.df_validation = df_validation
-        self.df_test = df_test
         self.train_loader = train_loader
         self.validation_loader = validation_loader
-        self.test_loader = test_loader
         self.device = device
         self.model = model
         self.criterion = criterion
@@ -44,6 +42,7 @@ def train(num_epochs, trainer: QUMIA_Trainer):
         model.train()
         running_loss = 0.0
 
+        n_seconds = 10  # Print every n seconds
         for i, data in enumerate(train_loader, 0):
             inputs = data['image']
             labels = data['label']
@@ -63,7 +62,7 @@ def train(num_epochs, trainer: QUMIA_Trainer):
 
             optimizer.zero_grad()
 
-            outputs = model(inputs)  # , fuse_features
+            outputs = model(inputs, fuse_features)
             # print(outputs.shape)
             # print(outputs.dtype)
             
@@ -93,7 +92,6 @@ def train(num_epochs, trainer: QUMIA_Trainer):
     # Do the final validation run (saving the predictions)
     validate(trainer, set_type='validation')
     validate(trainer, set_type='train')
-    validate(trainer, set_type='test')
 
     wandb.finish()
 
@@ -103,16 +101,9 @@ def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation'):
     """ This will evaluate the model on the validation or train dataset (set_type),
         save the predictions to a csv file and generate a confusion matrix.
     """
-    assert set_type in ['train', 'validation', 'test']
-    if set_type == 'train':
-        loader = trainer.train_loader
-        df = trainer.df_train
-    elif set_type == 'validation':
-        loader = trainer.validation_loader
-        df = trainer.df_validation
-    else:
-        loader = trainer.test_loader
-        df = trainer.df_test
+    assert set_type in ['validation', 'train']
+    loader = trainer.validation_loader if set_type == 'validation' else trainer.train_loader
+    df = trainer.df_validation if set_type == 'validation' else trainer.df_train
 
     # Make predictions on the specified dataset
     predictions, labels, loss = make_predictions(trainer, loader, n_batches)
@@ -174,7 +165,7 @@ def make_predictions(trainer: QUMIA_Trainer, dataloader, n_batches=None):
             fuse_features = fuse_features.to(trainer.device)
 
             # Forward pass
-            outputs = trainer.model(inputs) #, fuse_features)
+            outputs = trainer.model(inputs, fuse_features)
             
             # Save predictions and labels
             predictions.append(outputs)
