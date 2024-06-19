@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 import torch
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torchsummary import summary
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
@@ -30,6 +30,10 @@ if load_dotenv():
 else:
     sessionLabel = None
 print(sessionLabel)
+
+
+def is_running_as_script():
+    return __name__ == '__main__' and '__file__' in globals()
 
 
 image_size = 448
@@ -56,7 +60,7 @@ wandb.init(
 
 # Data directories
 data_dir = '/projects/0/einf6214/data'
-data_dir_images = os.path.join(data_dir, 'merged')
+data_dir_images = os.path.join(data_dir, 'masked')
 
 # Output dir (relative to code; we assume a dedicated directory with the copied code for each session, see run_session.sh)
 output_dir = 'output'
@@ -71,7 +75,8 @@ print("Device: " + str(device))
 # Read data
 df_train = pd.read_csv(os.path.join(data_dir, 'split_train.csv'))
 df_val = pd.read_csv(os.path.join(data_dir, 'split_val.csv'))
-print(df_train.shape, df_val.shape)
+df_test = pd.read_csv(os.path.join(data_dir, 'split_test.csv'))
+print(df_train.shape, df_val.shape, df_test.shape)
 
 
 elastic_alpha = 480.0
@@ -88,7 +93,7 @@ train_transform = A.Compose(
     ]
 )
 
-validation_transform = A.Compose(
+evaluation_transform = A.Compose(
     [
         A.Resize(image_size, image_size),
         A.Normalize(mean=(0.5,), std=(0.225,)),
@@ -97,13 +102,24 @@ validation_transform = A.Compose(
 )
 
 
+fuse_features = ["bmi", "Age_exam"]
+#fuse_features = []
+use_subset = not is_running_as_script()
+
 # Create dataset and dataloader for the train data
-train_dataset = QUMIA_Dataset(df_train, transform=train_transform, data_dir=data_dir_images)
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=8)
+train_dataset = QUMIA_Dataset(df_train, transform=train_transform, data_dir=data_dir_images, fuse_features=fuse_features)
+train_subset = Subset(train_dataset, range(100))
+train_loader = DataLoader(train_subset if use_subset else train_dataset, batch_size=32, shuffle=True, num_workers=8)
 
 # Create dataset and dataloader for the validation data (no shuffle)
-validation_dataset = QUMIA_Dataset(df_val, transform=validation_transform, data_dir=data_dir_images)
-validation_loader = DataLoader(validation_dataset, batch_size=32, shuffle=False, num_workers=8)
+validation_dataset = QUMIA_Dataset(df_val, transform=evaluation_transform, data_dir=data_dir_images, fuse_features=fuse_features)
+validation_subset = Subset(validation_dataset, range(30))
+validation_loader = DataLoader(validation_subset if use_subset else validation_dataset, batch_size=32, shuffle=False, num_workers=8)
+
+# Create dataset and dataloader for the test data (no shuffle)
+test_dataset = QUMIA_Dataset(df_test, transform=evaluation_transform, data_dir=data_dir_images, fuse_features=fuse_features)
+test_subset = Subset(test_dataset, range(30))
+test_loader = DataLoader(test_subset if use_subset else test_dataset, batch_size=32, shuffle=False, num_workers=8)
 
 
 def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
@@ -121,9 +137,50 @@ def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
 #visualize_augmentations(train_dataset)
 
 
+def value_to_hscore(y):
+    return y
+    # values = [0, 8, 12, 14]
+
+    # # Handle cases where y is outside the bounds of the values list
+    # if y <= values[0]:
+    #     return 1.0
+    # if y >= values[-1]:
+    #     return 1.0 * len(values)
+
+    # # Find the two closest numbers that y falls between
+    # for i in range(len(values) - 1):
+    #     if values[i] <= y <= values[i + 1]:
+    #         lower_bound = values[i]
+    #         upper_bound = values[i + 1]
+    #         break
+
+    # # Calculate the fractional position of y between these two numbers
+    # fraction = (y - lower_bound) / (upper_bound - lower_bound)
+
+    # # Return the interpolated index
+    # return 1.0 * i + fraction + 1.0
+
+
+def hscore_to_value(hscore):
+    return hscore
+    # values = [0, 8, 12, 14]
+    # index = int(hscore) - 1
+
+    # # Handle cases where hscore is outside the valid index range
+    # if index < 0:
+    #     return values[0]
+    # if index >= len(values):
+    #     return values[-1]
+
+    # return values[index]
+
+#print(value_to_hscore(13))
+
+
 def create_model():
     model = QUMIA_Model(config["image_channels"], image_size, config["model_layers"], 
-                        config["model_first_out_channels"], config["model_fully_connected_size"])
+                        config["model_first_out_channels"], config["model_fully_connected_size"],
+                        len(fuse_features))
     model.to(device)
     return model
 
@@ -132,7 +189,10 @@ def create_model():
 model = create_model()
 
 # Print a summary of the model
-summary(model, (image_channels, image_size, image_size), device=device.type)
+# with feature fusion:
+# summary(model, input_data=[(1, image_channels, image_size, image_size), (1, 2)], device=device.type)
+
+#summary(model, (image_channels, image_size, image_size), device=device.type)
 
 
 # Loss function
@@ -165,7 +225,7 @@ optimizer = optim.Adam(model.parameters(), lr=config["learning_rate"])
 
 
 # Create a trainer that holds all the objects
-trainer = QUMIA_Trainer(df_train, df_val, train_loader, validation_loader,
+trainer = QUMIA_Trainer(df_train, df_val, df_test, train_loader, validation_loader, test_loader,
                         device, model, criterion, optimizer, output_dir)
 
 
@@ -181,6 +241,6 @@ def main():
         validate(trainer, set_type="validation")
 
 # Check if we are running as a script and not in a notebook
-if __name__ == '__main__' and '__file__' in globals():
+if is_running_as_script():
     main()
 

@@ -16,11 +16,13 @@ class QUMIA_Trainer:
         (So we're not passing around a bunch of arguments to functions all the time.)
     """
 
-    def __init__(self, df_train, df_validation, train_loader, validation_loader, device, model, criterion, optimizer, output_dir):
+    def __init__(self, df_train, df_validation, df_test, train_loader, validation_loader, test_loader, device, model, criterion, optimizer, output_dir):
         self.df_train = df_train
         self.df_validation = df_validation
+        self.df_test = df_test
         self.train_loader = train_loader
         self.validation_loader = validation_loader
+        self.test_loader = test_loader
         self.device = device
         self.model = model
         self.criterion = criterion
@@ -42,9 +44,10 @@ def train(num_epochs, trainer: QUMIA_Trainer):
         model.train()
         running_loss = 0.0
 
-        n_seconds = 10  # Print every n seconds
         for i, data in enumerate(train_loader, 0):
-            inputs, labels = data
+            inputs = data['image']
+            labels = data['label']
+            fuse_features = data['fuse_features']
             
             # Reshape labels to match output of model
             labels = labels.view(-1, 1).float()
@@ -52,6 +55,7 @@ def train(num_epochs, trainer: QUMIA_Trainer):
             # Move input and label tensors to the default device
             inputs = inputs.to(device)
             labels = labels.to(device)
+            fuse_features = fuse_features.to(device)
             
             # print the shape of the input and label tensors
             #print(inputs.shape, labels.shape)
@@ -59,7 +63,7 @@ def train(num_epochs, trainer: QUMIA_Trainer):
 
             optimizer.zero_grad()
 
-            outputs = model(inputs)
+            outputs = model(inputs, fuse_features)
             # print(outputs.shape)
             # print(outputs.dtype)
             
@@ -89,6 +93,7 @@ def train(num_epochs, trainer: QUMIA_Trainer):
     # Do the final validation run (saving the predictions)
     validate(trainer, set_type='validation')
     validate(trainer, set_type='train')
+    validate(trainer, set_type='test')
 
     wandb.finish()
 
@@ -98,9 +103,16 @@ def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation'):
     """ This will evaluate the model on the validation or train dataset (set_type),
         save the predictions to a csv file and generate a confusion matrix.
     """
-    assert set_type in ['validation', 'train']
-    loader = trainer.validation_loader if set_type == 'validation' else trainer.train_loader
-    df = trainer.df_validation if set_type == 'validation' else trainer.df_train
+    assert set_type in ['train', 'validation', 'test']
+    if set_type == 'train':
+        loader = trainer.train_loader
+        df = trainer.df_train
+    elif set_type == 'validation':
+        loader = trainer.validation_loader
+        df = trainer.df_validation
+    else:
+        loader = trainer.test_loader
+        df = trainer.df_test
 
     # Make predictions on the specified dataset
     predictions, labels, loss = make_predictions(trainer, loader, n_batches)
@@ -108,10 +120,10 @@ def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation'):
     
     # Convert predictions and labels to numpy arrays, and map back to original h_score values
     predictions = predictions.cpu().numpy().flatten()
-    predictions = np.array(predictions, dtype=np.float32)
+    predictions = np.array([QUMIA_Dataset.value_to_hscore(value) for value in predictions], dtype=np.float32)
     rounded_predictions = np.round(predictions)
     labels = labels.cpu().numpy().flatten()
-    labels = np.array(labels, dtype=np.float32)
+    labels = np.array([QUMIA_Dataset.value_to_hscore(value) for value in labels], dtype=np.float32)
     print(predictions.shape, labels.shape)
     print(rounded_predictions.dtype)
 
@@ -153,16 +165,18 @@ def make_predictions(trainer: QUMIA_Trainer, dataloader, n_batches=None):
     with torch.no_grad():
         running_loss = 0.0
         for index, batch in enumerate(dataloader, 0): # tqdm(dataloader, total=len(dataloader), desc="Performing predictions on validation data"):
-            inputs, batch_labels = batch
-            batch_labels = batch_labels.view(-1, 1).float()
+            inputs = batch['image']
+            batch_labels = batch['label'].view(-1, 1).float()
+            fuse_features = batch['fuse_features']
 
             # Move input and label tensors to the default device
             inputs = inputs.to(trainer.device)
             batch_labels = batch_labels.to(trainer.device)
+            fuse_features = fuse_features.to(trainer.device)
 
             # Forward pass
-            outputs = trainer.model(inputs)
-            
+            outputs = trainer.model(inputs, fuse_features)
+
             # Save predictions and labels
             predictions.append(outputs)
             labels.append(batch_labels)
