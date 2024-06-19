@@ -116,12 +116,6 @@ print(df['h_score'].value_counts())
 # Name: count, dtype: int64
 
 
-df.head()
-
-
-df["bmi"] = (df["Weight"] / (df["Length"] ** 2)).round(1)
-
-
 # write the merged dataset to a csv file
 df.to_csv(os.path.join(data_dir, 'merged.csv'), index=False)
 
