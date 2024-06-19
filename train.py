@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from torchinfo import summary
+from torchsummary import summary
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import wandb
@@ -132,7 +132,7 @@ def create_model():
 model = create_model()
 
 # Print a summary of the model
-#summary(model, input_data=[(1, image_channels, image_size, image_size), (1, 2)], device=device.type)
+summary(model, (image_channels, image_size, image_size), device=device.type)
 
 
 # Loss function
