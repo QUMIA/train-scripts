@@ -198,7 +198,11 @@ model = create_model()
 # Loss function
 #criterion = torch.nn.MSELoss()
 
-class_weights = torch.tensor([0.01195304017, 0.03527882809, 0.08486611199, 0.8679020198])
+total_count = df_train.shape[0]
+h_score_counts = df_train['h_score'].value_counts()
+weights = [total_count / h_score_counts[i] for i in range(1, 5)]
+w_sum = sum(weights)
+class_weights = torch.tensor([w / w_sum for w in weights])
 class_weights = class_weights.to(device)
 
 def weighted_mse_loss(input, target):
