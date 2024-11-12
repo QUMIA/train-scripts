@@ -138,7 +138,8 @@ def visualize_augmentations(dataset, idx=0, samples=10, cols=5):
 
 
 def value_to_hscore(y):
-    return y
+    return max(4.0, min(1.0, y)) # clamp to [1, 4]
+
     # values = [0, 8, 12, 14]
 
     # # Handle cases where y is outside the bounds of the values list

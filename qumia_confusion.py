@@ -42,7 +42,7 @@ def array_to_csv_with_headers(array, path, row_headers, col_headers):
 
 def create_confusion_matrix(predicted_values, true_labels, set_type, output_dir):
     # Define the class labels and the number of classes
-    class_labels = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
+    class_labels = [1.0, 2.0, 3.0, 4.0]
     num_classes = len(class_labels)
 
     # Create a confusion matrix to count occurrences of predicted vs. true labels

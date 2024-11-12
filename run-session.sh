@@ -81,7 +81,7 @@ EOF
 ### Queue the job ###
 
 # Queue the train job inside the output directory (we want to have the log there also)
-cd $OUTPUT_DIR
+cd "$OUTPUT_DIR"
 sbatch train-job.sh
 
 echo Done
