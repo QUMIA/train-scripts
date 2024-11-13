@@ -63,7 +63,7 @@ class QUMIA_Dataset(Dataset):
 
     @staticmethod
     def value_to_hscore(y):
-        return max(4.0, min(1.0, y)) # clamp to [1, 4]
+        return max(1.0, min(4.0, y)) # clamp to [1, 4]
 
     @staticmethod
     def hscore_to_value(hscore):
