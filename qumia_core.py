@@ -156,8 +156,8 @@ def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation', fold
     create_confusion_matrix(rounded_predictions.tolist(), labels.tolist(), set_type, val_output_dir)
 
     # WandB confusion matrix
-    label_list = labels.astype(int).tolist()
-    pred_list = rounded_predictions.astype(int).tolist()
+    label_list = [value - 1 for value in labels.astype(int)]
+    pred_list = [value - 1 for value in rounded_predictions.astype(int)]
     wandb.log({"cm_" + folder: wandb.plot.confusion_matrix(probs=None,
                                y_true=label_list, preds=pred_list,
                                class_names=['1.0', '2.0', '3.0', '4.0'])})
