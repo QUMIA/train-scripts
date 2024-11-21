@@ -82,8 +82,11 @@ def train(num_epochs, trainer: QUMIA_Trainer):
 
         _, _, train_loss = make_predictions(trainer, train_loader)
         print(f"Train loss: {train_loss:.4f}")
+        validate(trainer, set_type='train', folder=f'val_epoch_{epoch}')
+
         _, _, validation_loss = make_predictions(trainer, validation_loader)
         print(f"Validation loss: {validation_loss:.4f}")
+        validate(trainer, set_type='validation', folder=f'val_epoch_{epoch}')
 
         wandb.log({"train-loss": train_loss, "validation-loss": validation_loss, "epoch": epoch})
 
@@ -91,15 +94,15 @@ def train(num_epochs, trainer: QUMIA_Trainer):
     torch.save(model.state_dict(), os.path.join(output_dir, 'final_model.pth'))
 
     # Do the final validation run (saving the predictions)
-    validate(trainer, set_type='validation')
-    validate(trainer, set_type='train')
-    validate(trainer, set_type='test')
+    validate(trainer, set_type='validation', folder='val_final')
+    validate(trainer, set_type='train', folder='val_final')
+    validate(trainer, set_type='test', folder='val_final')
 
     wandb.finish()
 
 
 
-def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation'):
+def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation', folder='validation'):
     """ This will evaluate the model on the validation or train dataset (set_type),
         save the predictions to a csv file and generate a confusion matrix.
     """
@@ -143,9 +146,15 @@ def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation'):
         #raise Exception("Mismatch between labels and inputs")
 
     # Save the dataframe to a csv file
-    df_combined.to_csv(os.path.join(trainer.output_dir, f'df_{set_type}_predictions.csv'), index=False)
+    val_output_dir = os.path.join(trainer.output_dir, folder)
+    df_combined.to_csv(os.path.join(val_output_dir, f'df_{set_type}_predictions.csv'), index=False)
 
-    create_confusion_matrix(rounded_predictions.tolist(), labels.tolist(), set_type, trainer.output_dir)
+    # Create a confusion matrix
+    create_confusion_matrix(rounded_predictions.tolist(), labels.tolist(), set_type, val_output_dir)
+
+    wandb.log({"cm_" + folder: wandb.plot.confusion_matrix(probs=None,
+                               y_true=labels, preds=predictions,
+                               class_names=['1.0', '2.0', '3.0', '4.0'])})
 
     return df_combined
 
