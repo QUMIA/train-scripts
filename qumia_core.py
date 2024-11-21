@@ -145,8 +145,11 @@ def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation', fold
         print("Possible mismatch between labels and inputs!")
         #raise Exception("Mismatch between labels and inputs")
 
-    # Save the dataframe to a csv file
+    # Prepare the output directory
     val_output_dir = os.path.join(trainer.output_dir, folder)
+    os.makedirs(val_output_dir, exist_ok=True)
+
+    # Save the dataframe to a csv file
     df_combined.to_csv(os.path.join(val_output_dir, f'df_{set_type}_predictions.csv'), index=False)
 
     # Create a confusion matrix
