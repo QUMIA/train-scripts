@@ -2,6 +2,8 @@
     <img style="width: 35%; height: 35%" src="qumia_logo.svg">
 </p>
 
+[![DOI](https://zenodo.org/badge/704001389.svg)](https://doi.org/10.5281/zenodo.14199793)
+
 These are a bunch of files used for training models for the QUMIA project.
 
 
