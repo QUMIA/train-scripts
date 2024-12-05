@@ -82,11 +82,11 @@ def train(num_epochs, trainer: QUMIA_Trainer):
 
         _, _, train_loss = make_predictions(trainer, train_loader)
         print(f"Train loss: {train_loss:.4f}")
-        validate(trainer, set_type='train', folder=f'val_epoch_{epoch}')
+        validate(trainer, set_type='train', folder=f'epoch_{epoch}')
 
         _, _, validation_loss = make_predictions(trainer, validation_loader)
         print(f"Validation loss: {validation_loss:.4f}")
-        validate(trainer, set_type='validation', folder=f'val_epoch_{epoch}')
+        validate(trainer, set_type='validation', folder=f'epoch_{epoch}')
 
         wandb.log({"train-loss": train_loss, "validation-loss": validation_loss, "epoch": epoch})
 
@@ -94,9 +94,9 @@ def train(num_epochs, trainer: QUMIA_Trainer):
     torch.save(model.state_dict(), os.path.join(output_dir, 'final_model.pth'))
 
     # Do the final validation run (saving the predictions)
-    validate(trainer, set_type='validation', folder='val_final')
-    validate(trainer, set_type='train', folder='val_final')
-    validate(trainer, set_type='test', folder='val_final')
+    validate(trainer, set_type='validation', folder='final')
+    validate(trainer, set_type='train', folder='final')
+    validate(trainer, set_type='test', folder='final')
 
     wandb.finish()
 
@@ -158,9 +158,9 @@ def validate(trainer: QUMIA_Trainer, n_batches=None, set_type='validation', fold
     # WandB confusion matrix
     label_list = [value - 1 for value in labels.astype(int)]
     pred_list = [value - 1 for value in rounded_predictions.astype(int)]
-    wandb.log({"cm_" + folder: wandb.plot.confusion_matrix(probs=None,
-                               y_true=label_list, preds=pred_list,
-                               class_names=['1.0', '2.0', '3.0', '4.0'])})
+    wandb.log({"_".join(["cm", folder, set_type]): wandb.plot.confusion_matrix(probs=None,
+                                                y_true=label_list, preds=pred_list,
+                                                class_names=['1.0', '2.0', '3.0', '4.0'])})
 
     return df_combined
 
