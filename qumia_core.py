@@ -88,6 +88,8 @@ def train(num_epochs, trainer: QUMIA_Trainer):
         print(f"Validation loss: {validation_loss:.4f}")
         validate(trainer, set_type='validation', folder=f'epoch_{epoch}')
 
+        validate(trainer, set_type='test', folder=f'epoch_{epoch}')
+
         wandb.log({"train-loss": train_loss, "validation-loss": validation_loss, "epoch": epoch})
 
     # Save the model and weights
