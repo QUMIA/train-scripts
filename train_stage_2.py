@@ -17,15 +17,20 @@ get_ipython().run_line_magic('autoreload', '2')
 
 
 #data_dir = "/Users/peter/repos/qu/results/2024-06-13_17-02-36_masked-image-text/output"
-data_dir = "/Users/peter/repos/qu/results/2024-11-13_16-55-03_fix-clamping/output"
+#session_label = "2024-11-21_15-42-26_with-cm-logging6"
+session_label = "2024-12-05_16-34-39_output-test-predictions"
+output_epoch = "epoch_18"
+data_dir = f"/Users/peter/repos/qu/results/{session_label}/output"
+if not output_epoch == "":
+    data_dir = os.path.join(data_dir, output_epoch)
 
 # Read and concatenate the data sets (just use all of them for now)
 df1 = pd.read_csv(os.path.join(data_dir, "df_train_predictions.csv"))
 df2 = pd.read_csv(os.path.join(data_dir, "df_validation_predictions.csv"))
 df3 = pd.read_csv(os.path.join(data_dir, "df_test_predictions.csv"))
-df_combined = pd.concat([df1, df2, df3])
+df_combined = pd.concat([df1, df2])
 print(df_combined.shape)
-print(df1.shape, df2.shape, df3.shape)
+print(df1.shape, df2.shape)
 print(df_combined.columns.values)
 
 print(df_combined['h_score'].value_counts())
@@ -118,28 +123,9 @@ print(input_test_df.shape, label_test_df.shape)
 # display(label_df.head(20))
 
 
-# Splitting data into training and testing sets
-#X_train, X_test, y_train, y_test = train_test_split(input_df, label_df, test_size=0.2, random_state=42)
-
-# Convert 
-
-
 label_values = label_train_df['diagnosis'].unique()
 label_values = [str(x) for x in label_values]
 print(input_values, label_values)
-
-
-print (X_train)
-print (y_train)
-
-
-print(X_train.shape, X_test.shape)
-print(y_train.shape, y_test.shape)
-print(type(X_train.values))
-
-
-print(X_train.head())
-print(y_train.head())
 
 
 def df_to_masked_array(df):
@@ -170,18 +156,12 @@ def boolean_df_to_int_array(df):
 
 if use_diagnosis:
     y_train_int = label_train_df.astype(int).to_numpy()
-    print(y_train_int[0:10])
     y_val_int = label_val_df.astype(int).to_numpy()
-    print(y_val_int[0:10])
     y_test_int = label_test_df.astype(int).to_numpy()
-    print(y_test_int[0:10])
 else:
     y_train_int = boolean_df_to_int_array(label_train_df)
-    print(y_train_int[0:10])
     y_val_int = boolean_df_to_int_array(label_val_df)
-    print(y_val_int[0:10])
     y_test_int = boolean_df_to_int_array(label_test_df)
-    print(y_test_int[0:10])
 
 
 from torch.utils.data import Dataset, DataLoader
@@ -250,6 +230,9 @@ for epoch in range(num_epochs):
             loss = criterion(outputs, target)
             val_loss += loss.item()
         val_loss /= len(val_loader)
+    
+    # Save the checkpoint
+    torch.save(model.state_dict(), f'checkpoint_{epoch+1}.pth')
 
     print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}, Val Loss: {val_loss:.4f}')
 
@@ -266,6 +249,9 @@ for epoch in range(num_epochs):
 
 import torch
 from sklearn.metrics import f1_score
+
+# Load the model at a specific checkpoint
+model.load_state_dict(torch.load('checkpoint_4.pth'))
 
 # Set the model to evaluation mode
 model.eval()
@@ -375,38 +361,44 @@ plt.ylim([0.0, 1.05])
 plt.xlim([0.0, 1.0])
 plt.title('Precision-Recall, AUC={0:0.2f}'.format(average_precision))
 plt.legend(loc="lower left")
+
+# Save the plot
+fig_path = f"{session_label}_{output_epoch}_prec-recall.png"
+plt.savefig(fig_path)
+
+# AFTER saving
 plt.show()
 
 
-from sklearn.metrics import roc_curve, auc
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import label_binarize
-import matplotlib.pyplot as plt
+# from sklearn.metrics import roc_curve, auc
+# from sklearn.model_selection import train_test_split
+# from sklearn.preprocessing import label_binarize
+# import matplotlib.pyplot as plt
 
-# # Assuming you have your features in X and target in y
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# # # Assuming you have your features in X and target in y
+# # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Binarize the output
-y_test = label_binarize(y_test, classes=[0, 1])
+# # Binarize the output
+# y_test = label_binarize(y_test, classes=[0, 1])
 
-# Train your classifier and predict probabilities
-# clf.fit(X_train, y_train)
-y_score = clf.predict_proba(X_test)
+# # Train your classifier and predict probabilities
+# # clf.fit(X_train, y_train)
+# y_score = clf.predict_proba(X_test)
 
-# Compute ROC curve and ROC area for each class
-fpr, tpr, _ = roc_curve(y_test, y_score[:, 1])
-roc_auc = auc(fpr, tpr)
+# # Compute ROC curve and ROC area for each class
+# fpr, tpr, _ = roc_curve(y_test, y_score[:, 1])
+# roc_auc = auc(fpr, tpr)
 
-# Plot
-plt.figure()
-lw = 2
-plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
-plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('Receiver Operating Characteristic example')
-plt.legend(loc="lower right")
-plt.show()
+# # Plot
+# plt.figure()
+# lw = 2
+# plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+# plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+# plt.xlim([0.0, 1.0])
+# plt.ylim([0.0, 1.05])
+# plt.xlabel('False Positive Rate')
+# plt.ylabel('True Positive Rate')
+# plt.title('Receiver Operating Characteristic example')
+# plt.legend(loc="lower right")
+# plt.show()
 

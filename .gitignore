@@ -2,7 +2,6 @@
 # The entries below (or any output) should always be ignored
 # to prevent patient properties (even if anonymous) from being leaked
 # into the repository
-*.ipynb
 *.csv
 *.out
 *.pth
